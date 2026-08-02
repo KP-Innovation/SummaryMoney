@@ -198,6 +198,369 @@ const Screens = (() => {
     return s;
   }
 
+  // ═══════════ ปฏิทิน — เช็กลิสต์ภาระประจำ + ของไม่คาดคิด ═══════════
+  //
+  //  หน้าที่หลักของหน้านี้คือ "เช็กลิสต์" ไม่ใช่แค่แสดงผล:
+  //   1. ภาระประจำ ใส่ครั้งเดียวใน โปรแกรม แล้วขึ้นให้ทุกเดือนเอง
+  //   2. กดติ๊กว่าจ่ายแล้วได้ตรงบนวันนั้น
+  //   3. ของไม่คาดคิด (ค่าซ่อมรถ / ให้ยืมแล้วรอคืน) เพิ่มลงวันไหนก็ได้
+  //  รายการที่เลยกำหนดแล้วยังไม่ติ๊ก จะถูกไฮไลต์เป็น "ค้างจ่าย"
+
+  const DOW = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+  const daysIn = id => { const [y, m] = id.split('-').map(Number); return new Date(y, m, 0).getDate(); };
+
+  /** จัดรายการทั้งเดือนลงตะกร้าของแต่ละวัน */
+  function bucketByDay(m, dim) {
+    const byDay = {}, noDay = [];
+    const put = (it, kind, color, list) => {
+      const e = { it, kind, color, list };
+      const d = Number(it.dueDay);
+      if (d >= 1 && d <= dim) (byDay[d] ||= []).push(e);
+      else noDay.push(e);
+    };
+    m.incomes.forEach(it => put(it, 'in', '#34d399', m.incomes));
+    m.oneTimes.forEach(it => put(it, 'in', '#a78bfa', m.oneTimes));
+    m.expenses.forEach(it => put(it, 'out', Engine.TYPES[it.type]?.color || '#94a3b8', m.expenses));
+    return { byDay, noDay };
+  }
+
+  /** วันนี้เลยกำหนดของวันนั้นไปแล้วหรือยัง (ใช้ตัดสินว่า "ค้าง") */
+  function overdueRef(monthId) {
+    const now = new Date();
+    const nowId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    if (monthId < nowId) return 32;          // เดือนที่ผ่านไปแล้ว ทุกวันถือว่าเลยกำหนด
+    if (monthId > nowId) return 0;           // เดือนอนาคต ยังไม่มีอะไรค้าง
+    return now.getDate();
+  }
+
+  function calendar(host) {
+    const D = Store.get();
+    const id = App.state.month;
+    const m = Store.ensureMonth(id);
+    const dim = daysIn(id);
+    const [y, mo] = id.split('-').map(Number);
+    const startDow = new Date(y, mo - 1, 1).getDay();
+    const { byDay, noDay } = bucketByDay(m, dim);
+    const odRef = overdueRef(id);
+
+    const all = [...m.incomes, ...m.oneTimes, ...m.expenses];
+    const paidN = all.filter(x => x.paid).length;
+    const dueLeft = sum(m.expenses.filter(e => !e.paid), e => e.amount);
+    const overdue = m.expenses.filter(e => !e.paid && e.dueDay && e.dueDay < odRef);
+
+    // ── หัวเดือน + สรุปเช็กลิสต์ ──
+    const head = card(`
+      <div class="monthbar">
+        <button class="icon-btn" id="pm">‹</button>
+        <div class="m-label">${monthFull(id)}</div>
+        <button class="icon-btn" id="nm">›</button>
+      </div>
+      <div class="kv"><span class="kv-k">ติ๊กแล้ว</span>
+        <span class="kv-v num">${paidN} / ${all.length} รายการ</span></div>
+      <div class="bar" style="margin:6px 0 12px">
+        <i style="width:${all.length ? paidN / all.length * 100 : 0}%;background:linear-gradient(90deg,#34d399,#38bdf8)"></i></div>
+      <div class="kv"><span class="kv-k">ยังไม่จ่าย</span>
+        <span class="kv-v num neg">${money(dueLeft)} ฿</span></div>
+      ${overdue.length ? `<div class="kv"><span class="kv-k neg">⚠ เลยกำหนดแล้วยังไม่ติ๊ก</span>
+        <span class="kv-v num neg">${overdue.length} รายการ</span></div>` : ''}
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn ghost" id="fill">เติมภาระประจำ</button>
+        <button class="btn" id="quick">+ เพิ่มรายการ</button>
+      </div>`);
+    host.appendChild(head);
+    head.querySelector('#pm').onclick = () => App.goMonth(shiftMonth(id, -1));
+    head.querySelector('#nm').onclick = () => App.goMonth(shiftMonth(id, 1));
+    head.querySelector('#fill').onclick = () => {
+      const n = Store.applyRecurring(id);
+      Store.commit(); App.render();
+      App.toast(n ? `เติมภาระประจำ ${n} รายการ` : 'ครบอยู่แล้ว ไม่มีอะไรต้องเติม');
+    };
+    head.querySelector('#quick').onclick = () => quickAdd(id, new Date().getDate());
+
+    // ── ตารางปฏิทิน ──
+    const grid = card(`
+      <div class="cal-dow">${DOW.map((d, i) =>
+        `<span class="${i === 0 || i === 6 ? 'we' : ''}">${d}</span>`).join('')}</div>
+      <div class="cal-grid" id="g"></div>`);
+    host.appendChild(grid);
+    const g = grid.querySelector('#g');
+    for (let i = 0; i < startDow; i++) g.appendChild(el('<div class="cal-cell out"></div>'));
+
+    const now = new Date();
+    const todayD = (now.getFullYear() === y && now.getMonth() + 1 === mo) ? now.getDate() : 0;
+
+    for (let d = 1; d <= dim; d++) {
+      const list = byDay[d] || [];
+      const unpaid = list.filter(e => !e.it.paid);
+      const isOver = d < odRef && unpaid.length > 0;
+      const allPaid = list.length > 0 && unpaid.length === 0;
+      const net = sum(list.filter(e => e.kind === 'in'), e => e.it.amount)
+                - sum(list.filter(e => e.kind === 'out'), e => e.it.amount);
+
+      const cell = el(`<button class="cal-cell ${list.length ? 'has' : ''} ${d === todayD ? 'today' : ''} ${isOver ? 'over' : ''} ${allPaid ? 'done' : ''}">
+        <div class="cal-top">
+          <span class="cal-d">${d}</span>
+          ${allPaid ? '<span class="cal-tick">✓</span>' : isOver ? '<span class="cal-warn">!</span>' : ''}
+        </div>
+        <div class="cal-dots">${list.slice(0, 8).map(e =>
+          `<i style="background:${e.color};${e.it.paid ? 'opacity:.28' : ''}"></i>`).join('')}</div>
+        ${list.length ? `<div class="cal-mini">${esc(list[0].it.name)}${list.length > 1 ? ` +${list.length - 1}` : ''}</div>` : ''}
+        ${net ? `<div class="cal-net num ${net < 0 ? 'neg' : 'pos'}">${signed(net)}</div>` : ''}
+      </button>`);
+      cell.onclick = () => daySheet(id, d);
+      g.appendChild(cell);
+    }
+
+    // ── ยังไม่ได้ระบุวัน ──
+    if (noDay.length) {
+      const un = card(`<div class="card-head">
+          <div class="card-title">ยังไม่ได้ระบุวัน · ${noDay.length} รายการ</div></div>
+        <div class="hint" style="margin-bottom:8px">กำหนดวันแล้วมันจะไปโผล่บนปฏิทินเอง</div>
+        <div id="rows"></div>`);
+      host.appendChild(un);
+      const box = un.querySelector('#rows');
+      noDay.forEach(e => {
+        const row = el(`<div class="row">
+          <span class="sect-dot" style="background:${e.color}"></span>
+          <span class="row-name">${esc(e.it.name)}</span>
+          <span class="row-amt num ${e.kind === 'in' ? 'pos' : 'neg'}">${e.kind === 'in' ? '+' : '−'}${money(e.it.amount)}</span>
+          <button class="mini on">ระบุวัน</button></div>`);
+        row.querySelector('button').onclick = () => askDay(e.it, () => App.render());
+        box.appendChild(row);
+      });
+    }
+
+    // ── ภาระประจำ ──
+    const rc = card(`<div class="card-head">
+        <div class="card-title">ภาระประจำ · ใส่ครั้งเดียว ขึ้นทุกเดือนเอง</div></div>
+      <div id="rows"></div>
+      <button class="addrow" id="add">+ เพิ่มภาระประจำ</button>`);
+    host.appendChild(rc);
+    const rbox = rc.querySelector('#rows');
+    if (!D.recurring.length) rbox.appendChild(el('<div class="empty">ยังไม่มีภาระประจำ</div>'));
+    D.recurring.forEach(r => {
+      const meta = Engine.TYPES[r.type] || Engine.TYPES.fixed;
+      const row = el(`<div class="row" style="${r.active ? '' : 'opacity:.4'}">
+        <button class="mini on" title="เปิด/ปิด">${r.active ? '☑' : '☐'}</button>
+        <span class="sect-dot" style="background:${meta.color}"></span>
+        <span class="row-name"></span>
+        <span class="chip" style="margin-right:6px">${r.dueDay ? 'วันที่ ' + r.dueDay : 'ไม่ระบุวัน'}</span>
+        <span class="row-amt num"></span></div>`);
+      Edit.inline(row.querySelector('.row-name'), { get: () => r.name, set: v => { r.name = v; Store.commit(); } });
+      Edit.inline(row.querySelector('.row-amt'), { type: 'money', get: () => r.amount,
+        set: v => { r.amount = v; Store.commit(); App.render(); } });
+      row.querySelector('button').onclick = () => { r.active = !r.active; Store.commit(); App.render(); };
+      row.querySelector('.chip').style.cursor = 'pointer';
+      row.querySelector('.chip').onclick = () => askDay(r, () => App.render());
+      row.appendChild(Edit.delBtn(r.name, () => {
+        D.recurring = D.recurring.filter(x => x !== r); Store.commit(); App.render();
+      }));
+      rbox.appendChild(row);
+    });
+    rc.querySelector('#add').onclick = () => {
+      D.recurring.push({ id: U.uid('r'), name: 'ภาระใหม่', amount: 0, type: 'fixed', dueDay: 1, active: true });
+      Store.commit(); App.render();
+    };
+
+    host.appendChild(card(`<div class="legend">
+      ${Object.entries(Engine.TYPES).map(([, v]) =>
+        `<span><i style="background:${v.color}"></i>${esc(v.label)}</span>`).join('')}
+      <span><i style="background:#34d399"></i>รายรับ</span>
+      <span><i style="background:#a78bfa"></i>เงินก้อนพิเศษ</span>
+      <span style="opacity:.7">จุดจาง = ติ๊กแล้ว</span>
+    </div>`));
+  }
+
+  /** ถามวันที่ของรายการหนึ่ง */
+  function askDay(it, done) {
+    Sheet.open('กำหนดวันของ "' + it.name + '"', body => {
+      body.innerHTML = `
+        <label class="fld"><span>วันที่ในเดือน (1–31)</span>
+          <input type="number" id="d" min="1" max="31" value="${it.dueDay || ''}"></label>
+        <div class="btn-row">
+          <button class="btn ghost" id="clr">ล้างวัน</button>
+          <button class="btn" id="ok">บันทึก</button>
+        </div>`;
+      body.querySelector('#ok').onclick = () => {
+        const v = Number(body.querySelector('#d').value);
+        it.dueDay = v >= 1 && v <= 31 ? v : undefined;
+        Store.commit(); Sheet.close(); done();
+      };
+      body.querySelector('#clr').onclick = () => { delete it.dueDay; Store.commit(); Sheet.close(); done(); };
+    });
+  }
+
+  /**
+   * เพิ่มรายการไม่คาดคิด
+   * "ให้ยืม" สร้างสองรายการพร้อมกัน: เงินออกวันนี้ + เงินเข้าวันที่นัดคืน
+   * (ข้ามเดือนได้ ระบบจะสร้างเดือนปลายทางให้เอง) — จะได้ไม่ลืมว่ามีเงินก้อนนี้รออยู่
+   */
+  function quickAdd(monthId, day) {
+    Sheet.open('เพิ่มรายการ', body => {
+      body.innerHTML = `
+        <label class="fld"><span>ประเภท</span>
+          <select id="k">
+            <option value="out">รายจ่ายไม่คาดคิด (เช่น ค่าซ่อมรถ)</option>
+            <option value="in">รายรับพิเศษ</option>
+            <option value="lend">ให้ยืม — มีกำหนดคืน</option>
+          </select></label>
+        <label class="fld"><span>ชื่อรายการ</span>
+          <input type="text" id="n" placeholder="เช่น ค่าซ่อมรถ / ให้พี่บิวยืม"></label>
+        <label class="fld"><span>จำนวนเงิน (พิมพ์สูตรได้ เช่น 1200+800)</span>
+          <input type="text" id="a" inputmode="decimal" placeholder="0"></label>
+        <div class="grid g2">
+          <label class="fld"><span>วันที่</span>
+            <input type="number" id="d" min="1" max="31" value="${day}"></label>
+          <label class="fld" id="w-type"><span>หมวด</span>
+            <select id="t">
+              <option value="variable">ผันแปร</option>
+              <option value="fixed">รายจ่ายประจำ</option>
+              <option value="debt">หนี้ / บัตร</option>
+              <option value="saving">เงินออม</option>
+            </select></label>
+        </div>
+        <div id="w-back" hidden>
+          <div class="grid g2">
+            <label class="fld"><span>นัดคืนเดือน</span>
+              <select id="bm"></select></label>
+            <label class="fld"><span>นัดคืนวันที่</span>
+              <input type="number" id="bd" min="1" max="31" value="${day}"></label>
+          </div>
+        </div>
+        <button class="btn wide" id="ok">เพิ่มลงปฏิทิน</button>`;
+
+      // ตัวเลือกเดือนคืนเงิน: เดือนนี้ + 12 เดือนข้างหน้า
+      const bm = body.querySelector('#bm');
+      for (let i = 0; i <= 12; i++) {
+        const mid = shiftMonth(monthId, i);
+        bm.appendChild(el(`<option value="${mid}">${monthFull(mid)}</option>`));
+      }
+      bm.value = shiftMonth(monthId, 1);
+
+      const k = body.querySelector('#k');
+      const sync = () => {
+        const lend = k.value === 'lend';
+        body.querySelector('#w-back').hidden = !lend;
+        body.querySelector('#w-type').style.visibility = k.value === 'in' ? 'hidden' : 'visible';
+      };
+      k.onchange = sync; sync();
+
+      body.querySelector('#ok').onclick = () => {
+        const name = body.querySelector('#n').value.trim() || 'รายการใหม่';
+        const amt = U.calc(body.querySelector('#a').value) || 0;
+        const d = U.clamp(Number(body.querySelector('#d').value) || day, 1, 31);
+        const kind = k.value;
+        const m = Store.ensureMonth(monthId);
+
+        if (kind === 'in') {
+          m.incomes.push({ id: U.uid('i'), name, amount: amt, dueDay: d, note: '', paid: false });
+        } else {
+          m.expenses.push({ id: U.uid('e'), name, amount: amt, dueDay: d,
+            type: kind === 'lend' ? 'variable' : body.querySelector('#t').value,
+            note: kind === 'lend' ? 'ให้ยืม — รอรับคืน' : '', paid: false });
+          if (kind === 'lend') {
+            const backId = body.querySelector('#bm').value;
+            const backD = U.clamp(Number(body.querySelector('#bd').value) || d, 1, 31);
+            const bm2 = Store.ensureMonth(backId);
+            bm2.incomes.push({ id: U.uid('i'), name: `${name} (รับคืน)`, amount: amt,
+              dueDay: backD, note: 'เงินที่ให้ยืมไว้ ถึงกำหนดคืน', paid: false });
+          }
+        }
+        Store.commit(); Sheet.close(); App.render();
+        App.toast(kind === 'lend' ? 'เพิ่มแล้ว — ตั้งวันรับคืนไว้ให้ด้วย' : 'เพิ่มลงปฏิทินแล้ว');
+      };
+    });
+  }
+
+  /** รายละเอียดของวันหนึ่ง — เช็กลิสต์ + แก้ได้ทุกช่องตรงนั้น */
+  function daySheet(monthId, day) {
+    const D = Store.get();
+    const m = Store.ensureMonth(monthId);
+    const dim = daysIn(monthId);
+    const odRef = overdueRef(monthId);
+
+    const build = body => {
+      const { byDay } = bucketByDay(m, dim);
+      const list = byDay[day] || [];
+      const inSum = sum(list.filter(e => e.kind === 'in'), e => e.it.amount);
+      const outSum = sum(list.filter(e => e.kind === 'out'), e => e.it.amount);
+      const left = sum(list.filter(e => e.kind === 'out' && !e.it.paid), e => e.it.amount);
+
+      body.innerHTML = `
+        <div style="padding-bottom:12px;border-bottom:1px solid var(--line)">
+          <div class="kv" style="padding:2px 0"><span class="kv-k">เข้า</span>
+            <span class="kv-v num pos">+${money(inSum)}</span></div>
+          <div class="kv" style="padding:2px 0"><span class="kv-k">ออก</span>
+            <span class="kv-v num neg">−${money(outSum)}</span></div>
+          <div class="kv" style="padding:2px 0"><span class="kv-k">ยังไม่ติ๊ก</span>
+            <span class="kv-v num ${left ? 'warn' : 'pos'}">${left ? money(left) + ' ฿' : 'ครบแล้ว ✓'}</span></div>
+        </div>
+        <div id="rows" style="margin:8px 0"></div>
+        <div id="marks"></div>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn ghost" id="allp">ติ๊กทั้งวัน</button>
+          <button class="btn" id="qa">+ เพิ่มรายการ</button>
+        </div>`;
+
+      const rows = body.querySelector('#rows');
+      if (!list.length) rows.appendChild(el('<div class="empty">วันนี้ยังไม่มีรายการ</div>'));
+
+      list.forEach(e => {
+        const over = !e.it.paid && day < odRef;
+        const row = el(`<div class="row ${e.it.paid ? 'paid' : ''}">
+          <button class="mini on chk" title="จ่ายแล้ว/ยังไม่จ่าย">${e.it.paid ? '☑' : '☐'}</button>
+          <span class="sect-dot" style="background:${e.color}"></span>
+          <span class="row-name"></span>
+          <span class="row-amt num ${e.kind === 'in' ? 'pos' : 'neg'}"></span>
+        </div>`);
+        if (over) row.querySelector('.row-name').after(el('<div class="row-sub neg">เลยกำหนดแล้ว</div>'));
+        else if (e.it.note) row.querySelector('.row-name').after(el(`<div class="row-sub">${esc(e.it.note)}</div>`));
+
+        Edit.inline(row.querySelector('.row-name'), {
+          get: () => e.it.name, set: v => { e.it.name = v; Store.commit(); App.render(); },
+        });
+        Edit.inline(row.querySelector('.row-amt'), {
+          type: 'money', prefix: e.kind === 'in' ? '+' : '−',
+          get: () => e.it.amount, set: v => { e.it.amount = v; Store.commit(); App.render(); build(body); },
+        });
+        row.querySelector('.chk').onclick = () => {
+          e.it.paid = !e.it.paid;
+          Store.commit(); App.render(); build(body);
+        };
+        const mv = el('<button class="mini on" title="ย้ายวัน">⇄</button>');
+        mv.onclick = () => askDay(e.it, () => { App.render(); Sheet.close(); });
+        row.appendChild(mv);
+        row.appendChild(Edit.noteBtn(e.it, () => { App.render(); build(body); }));
+        row.appendChild(Edit.delBtn(e.it.name, () => {
+          const i = e.list.indexOf(e.it);
+          if (i >= 0) e.list.splice(i, 1);
+          Store.commit(); App.render(); build(body);
+        }));
+        rows.appendChild(row);
+      });
+
+      const cm = D.cards.filter(c => c.dueDay === day || c.statementDay === day);
+      if (cm.length) {
+        const b = body.querySelector('#marks');
+        b.appendChild(el('<div class="card-title" style="margin:12px 0 6px">บัตรในวันนี้</div>'));
+        cm.forEach(c => b.appendChild(el(`<div class="row">
+          <span class="row-name">${esc(c.name)}</span>
+          <span class="chip ${c.dueDay === day ? 'neg' : ''}">${c.dueDay === day ? 'ครบกำหนดชำระ' : 'ตัดรอบ'}</span>
+        </div>`)));
+      }
+
+      body.querySelector('#allp').onclick = () => {
+        const target = list.some(e => !e.it.paid);
+        list.forEach(e => e.it.paid = target);
+        Store.commit(); App.render(); build(body);
+      };
+      body.querySelector('#qa').onclick = () => quickAdd(monthId, day);
+    };
+
+    Sheet.open(`${day} ${monthFull(monthId)}`, build);
+  }
+
+
   // ═══════════ 3. บัตร ═══════════
   function cards(host) {
     const D = Store.get();
@@ -407,7 +770,7 @@ const Screens = (() => {
     host.appendChild(clr);
   }
 
-  return { dashboard, month: monthScreen, cards, savings, forecast, split };
+  return { dashboard, calendar, month: monthScreen, cards, savings, forecast, split };
 })();
 
 window.Screens = Screens;
