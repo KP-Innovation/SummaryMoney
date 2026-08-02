@@ -288,37 +288,28 @@ body {
   .cal-net { font-size: 10px; }
 }
 
-/* ══ การ์ดปักหมุด (โฟกัส) ══ */
+/* ══ โซนปักหมุด (เดือนที่สนใจ) ══ */
 .pin-card { border-color: rgba(129,140,248,.34); background: rgba(129,140,248,.055); }
-.pin-row { padding: 11px 0; border-bottom: 1px solid var(--line); }
-.pin-row:last-child { border-bottom: 0; padding-bottom: 2px; }
-.pin-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
-.pin-name { font-size: 14.5px; font-weight: 700; flex: 1; min-width: 0;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pin-stat { font-size: 11.5px; font-weight: 700; color: var(--text-3); white-space: nowrap; }
-.pin-stat.all { color: var(--pos); }
-.pin-unpin { border: 0; background: none; color: var(--text-3); cursor: pointer;
-             font-size: 13px; padding: 2px 5px; border-radius: 6px; }
-.pin-unpin:hover { color: var(--neg); background: var(--surface-2); }
 
-.pin-strip { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; }
-.pin-cell {
-  aspect-ratio: 1; min-height: 26px;
-  display: grid; place-items: center;
-  border: 1px solid transparent; border-radius: 6px; cursor: pointer;
-  font: inherit; font-size: 10px; font-weight: 800;
-  background: rgba(251,146,60,.16); color: #fdba74;
-  transition: transform .12s var(--ease), filter .15s;
+/* ปุ่มหมุดที่หัวเดือน — จางไว้ก่อน เด่นเมื่อปักแล้ว */
+.yr-pin {
+  border: 0; background: none; cursor: pointer; padding: 0 1px;
+  font-size: 11px; line-height: 1; opacity: .22;
+  filter: grayscale(1);
+  transition: opacity .15s, filter .15s, transform .12s;
 }
-.pin-cell:hover { filter: brightness(1.25); }
-.pin-cell:active { transform: scale(.9); }
-.pin-cell.done { background: rgba(52,211,153,.16); color: #6ee7b7; }
-.pin-cell.none { background: rgba(255,255,255,.04); color: var(--text-3); cursor: default; }
-.pin-cell.now  { outline: 1.5px solid var(--accent); outline-offset: -1.5px; }
+.yr-month:hover .yr-pin { opacity: .55; }
+.yr-pin:hover { opacity: 1 !important; transform: scale(1.18); }
+.yr-pin.on { opacity: 1; filter: none; }
 
-.pin-empty { font-size: 12.5px; color: var(--text-3); line-height: 1.65; }
-
-@media (max-width: 480px) { .pin-cell { min-height: 22px; font-size: 9px; } .pin-strip { gap: 2px; } }
+/* ช่องเดือนที่ปักหมุด กว้างกว่าปกติเพื่อให้อ่านเช็กลิสต์สบายตา */
+.yr-grid.big { grid-template-columns: repeat(2, 1fr); }
+.yr-month.big { padding: 14px 14px 12px; }
+.yr-month.big .yr-name { font-size: 15.5px; }
+.yr-month.big .yr-item { padding: 8px 10px; }
+.yr-month.big .yr-item .t { font-size: 12.5px; }
+.yr-month.big .yr-item .a { font-size: 12px; }
+@media (max-width: 780px) { .yr-grid.big { grid-template-columns: 1fr; } }
 
 /* ══ ปฏิทินรายปี ══ */
 .seg {
@@ -339,7 +330,8 @@ body {
   display: flex; flex-direction: column; gap: 7px;
 }
 .yr-month.now { border-color: var(--accent); background: rgba(129,140,248,.07); }
-.yr-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.yr-head { display: flex; align-items: center; gap: 6px; }
+.yr-head .yr-name { flex: 1; min-width: 0; }
 .yr-name { font-size: 14px; font-weight: 800; letter-spacing: -.02em; }
 .yr-cnt { font-size: 11px; font-weight: 700; color: var(--text-3); }
 .yr-cnt.all { color: var(--pos); }

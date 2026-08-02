@@ -26,7 +26,9 @@ const Store = (() => {
     d.savingsGoal ??= 0;
     d.assumptions ??= { incomeAdj: 0, expenseAdj: 0, extraSaving: 0, closedCards: [] };
     d.recurring ??= [];
-    d.pinned ??= [];        // ชื่อภาระที่ปักหมุดไว้ดูบนสุดของปฏิทินรายปี
+    // เดือนที่ปักหมุดไว้ดูบนสุดของปฏิทินรายปี เก็บเป็นรหัสเดือน 'YYYY-MM'
+    // กรองด้วย regex เพราะเวอร์ชันก่อนเคยเก็บเป็น "ชื่อภาระ" — ของเก่าต้องถูกทิ้ง
+    d.pinned = (d.pinned || []).filter(x => /^\d{4}-\d{2}$/.test(x));
 
     for (const m of d.months) {
       m.status ??= 'predicted';

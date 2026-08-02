@@ -276,7 +276,7 @@ const Screens = (() => {
       leftAmt += sum(d.filter(x => !x.paid), x => x.amount);
     });
 
-    pinCard(host, year, ids);
+    pinnedZone(host, year);
 
     const head = card(`
       <div class="monthbar">
@@ -304,48 +304,7 @@ const Screens = (() => {
     const grid = el('<div class="yr-grid"></div>');
     host.appendChild(grid);
 
-    ids.forEach((id, i) => {
-      const m = Store.month(id);
-      const duties = m ? dutiesOf(m) : [];
-      const done = duties.filter(x => x.paid).length;
-      const others = m ? m.expenses.length - duties.length : 0;
-
-      const box = el(`<div class="yr-month ${id === nowId ? 'now' : ''}">
-        <div class="yr-head">
-          <span class="yr-name">${U.TH_MONTH[i]}</span>
-          <span class="yr-cnt ${duties.length && done === duties.length ? 'all' : ''}">${
-            duties.length ? `${done}/${duties.length}` : '—'}</span>
-        </div>
-        <div class="yr-items"></div>
-      </div>`);
-      const box2 = box.querySelector('.yr-items');
-
-      if (!m || !duties.length) {
-        const e = el('<div class="yr-empty">แตะเพื่อเติมภาระประจำ</div>');
-        e.onclick = () => {
-          Store.ensureMonth(id); Store.applyRecurring(id);
-          Store.commit(); App.render();
-        };
-        box2.appendChild(e);
-      } else {
-        duties.forEach(it => {
-          const b = el(`<button class="yr-item ${it.paid ? 'done' : ''}">
-            <span class="s">${it.paid ? '✓' : '○'}</span>
-            <span class="t">${esc(it.name)}</span>
-            <span class="a">${money(it.amount)}</span></button>`);
-          b.title = it.paid && it.paidOn ? `จ่ายเมื่อ ${it.paidOn}` : 'ยังไม่จ่าย';
-          b.onclick = () => togglePaid(it, id);
-          box2.appendChild(b);
-        });
-        if (others > 0) box2.appendChild(el(`<div class="yr-more">+ อื่นๆ ${others} รายการ</div>`));
-      }
-
-      box.querySelector('.yr-head').style.cursor = 'pointer';
-      box.querySelector('.yr-head').onclick = () => {
-        App.state.month = id; App.state.calMode = 'month'; App.render();
-      };
-      grid.appendChild(box);
-    });
+    ids.forEach((id, i) => grid.appendChild(monthBox(id, i)));
 
     host.appendChild(card(`<div class="hint">
       <b style="color:#fdba74">ส้ม</b> = ยังไม่จ่าย · <b style="color:#6ee7b7">เขียว</b> = จ่ายแล้ว ·
@@ -354,83 +313,82 @@ const Screens = (() => {
     </div>`));
   }
 
-  // ── การ์ดปักหมุด ────────────────────────────────────────────
-  //  ปักหมุด "ตามชื่อภาระ" ไม่ใช่ตามรายการของเดือนใดเดือนหนึ่ง
-  //  เพราะสิ่งที่อยากจับตาคือ "ค่าห้องทั้งปีจ่ายครบยัง" ไม่ใช่ "ค่าห้องเดือน ม.ค."
-  //  ผลคือได้แถบสถานะ 12 ช่องต่อหนึ่งภาระ กดเปลี่ยนสถานะได้ตรงนั้นเลย
-
-  const isPinned = name => (Store.get().pinned || []).includes(name);
-
-  function togglePin(name) {
-    const D = Store.get();
-    D.pinned = isPinned(name) ? D.pinned.filter(x => x !== name) : [...(D.pinned || []), name];
-    Store.commit(); App.render();
-    App.toast(isPinned(name) ? 'ปักหมุดแล้ว — ขึ้นไปอยู่บนสุด' : 'เอาหมุดออกแล้ว');
-  }
-
-  function pinCard(host, year, ids) {
-    const D = Store.get();
-    const pinned = D.pinned || [];
+  // ── ช่องเดือนหนึ่งช่อง (ใช้ทั้งในกริดรายปีและในโซนปักหมุด) ──
+  function monthBox(id, i, big = false) {
+    const m = Store.month(id);
+    const duties = m ? dutiesOf(m) : [];
+    const done = duties.filter(x => x.paid).length;
+    const others = m ? m.expenses.length - duties.length : 0;
     const nowId = Store.thisMonth();
+    const pinned = isPinned(id);
 
-    if (!pinned.length) {
-      host.appendChild(card(`<div class="pin-empty">
-        <b style="color:var(--text)">📌 ปักหมุดไว้จับตา</b><br>
-        แตะรายการไหนก็ได้ในปฏิทินข้างล่าง แล้วกด <b>ปักหมุด</b>
-        มันจะขึ้นมาอยู่บนสุดพร้อมสถานะครบทั้ง 12 เดือนในแถวเดียว
-      </div>`, 'pin-card'));
-      return;
+    const box = el(`<div class="yr-month ${id === nowId ? 'now' : ''} ${big ? 'big' : ''}">
+      <div class="yr-head">
+        <span class="yr-name">${U.TH_MONTH[i]}${big ? ' ' + (Number(id.slice(0, 4)) + 543) : ''}</span>
+        <span class="yr-cnt ${duties.length && done === duties.length ? 'all' : ''}">${
+          duties.length ? `${done}/${duties.length}` : '—'}</span>
+        <button class="yr-pin ${pinned ? 'on' : ''}" title="${pinned ? 'เอาหมุดออก' : 'ปักหมุดขึ้นบนสุด'}">📌</button>
+      </div>
+      <div class="yr-items"></div>
+    </div>`);
+
+    const items = box.querySelector('.yr-items');
+    if (!m || !duties.length) {
+      const e = el('<div class="yr-empty">แตะเพื่อเติมภาระประจำ</div>');
+      e.onclick = () => { Store.ensureMonth(id); Store.applyRecurring(id); Store.commit(); App.render(); };
+      items.appendChild(e);
+    } else {
+      duties.forEach(it => {
+        const b = el(`<button class="yr-item ${it.paid ? 'done' : ''}">
+          <span class="s">${it.paid ? '✓' : '○'}</span>
+          <span class="t">${esc(it.name)}</span>
+          <span class="a">${money(it.amount)}</span></button>`);
+        b.title = it.paid && it.paidOn ? `จ่ายเมื่อ ${it.paidOn}` : 'ยังไม่จ่าย';
+        b.onclick = () => togglePaid(it, id);
+        items.appendChild(b);
+      });
+      if (others > 0) items.appendChild(el(`<div class="yr-more">+ อื่นๆ ${others} รายการ</div>`));
     }
 
-    const box = card(`<div class="card-head">
-        <div class="card-title">📌 โฟกัส · ${pinned.length} รายการ</div>
-        <span class="chip">แตะช่องเดือนเพื่อเปลี่ยนสถานะ</span>
-      </div><div id="rows"></div>`, 'pin-card');
-    host.appendChild(box);
-    const rows = box.querySelector('#rows');
-
-    pinned.forEach(name => {
-      // หารายการชื่อนี้ในแต่ละเดือนของปีนั้น
-      const cells = ids.map(id => {
-        const m = Store.month(id);
-        return { id, it: m ? m.expenses.find(e => e.name === name) : null };
-      });
-      const have = cells.filter(c => c.it);
-      const done = have.filter(c => c.it.paid).length;
-      const amt = have[0]?.it.amount;
-
-      const row = el(`<div class="pin-row">
-        <div class="pin-head">
-          <span class="pin-name">${esc(name)}</span>
-          ${amt != null ? `<span class="pin-stat num">${money(amt)} ฿</span>` : ''}
-          <span class="pin-stat ${have.length && done === have.length ? 'all' : ''}">${done}/${have.length}</span>
-          <button class="pin-unpin" title="เอาหมุดออก">✕</button>
-        </div>
-        <div class="pin-strip"></div>
-      </div>`);
-
-      const strip = row.querySelector('.pin-strip');
-      cells.forEach((c, i) => {
-        const cls = !c.it ? 'none' : c.it.paid ? 'done' : '';
-        const b = el(`<button class="pin-cell ${cls} ${c.id === nowId ? 'now' : ''}"
-          title="${U.TH_MONTH[i]} ${!c.it ? 'ไม่มีรายการ' : c.it.paid ? 'จ่ายแล้ว ' + (c.it.paidOn || '') : 'ยังไม่จ่าย'}">${i + 1}</button>`);
-        if (c.it) b.onclick = () => togglePaid(c.it, c.id);
-        strip.appendChild(b);
-      });
-
-      row.querySelector('.pin-unpin').onclick = () => togglePin(name);
-      rows.appendChild(row);
-    });
+    box.querySelector('.yr-pin').onclick = e => { e.stopPropagation(); togglePin(id); };
+    const nameEl = box.querySelector('.yr-name');
+    nameEl.style.cursor = 'pointer';
+    nameEl.onclick = () => { App.state.month = id; App.state.calMode = 'month'; App.render(); };
+    return box;
   }
+
+  // ── โซนปักหมุด: เดือนที่สนใจถูกยกขึ้นมาไว้บนสุด ──
+  //  ปักหมุดทั้งเดือน ไม่ใช่รายรายการ — เจตนาคือ "จ้องเดือนนี้เป็นพิเศษ"
+  //  ช่องที่ปักจะกว้างกว่าปกติ (2 คอลัมน์) เพื่อให้อ่านเช็กลิสต์ได้สบายตา
+
+  const isPinned = id => (Store.get().pinned || []).includes(id);
+
+  function togglePin(id) {
+    const D = Store.get();
+    const on = isPinned(id);
+    D.pinned = on ? D.pinned.filter(x => x !== id) : [...(D.pinned || []), id];
+    D.pinned.sort();
+    Store.commit(); App.render();
+    App.toast(on ? 'เอาหมุดออกแล้ว' : 'ปักหมุดแล้ว — ขึ้นไปอยู่บนสุด');
+  }
+
+  function pinnedZone(host, year) {
+    const D = Store.get();
+    const pins = (D.pinned || []).filter(id => Number(id.slice(0, 4)) === year);
+    if (!pins.length) return;
+
+    const box = card(`<div class="card-head">
+        <div class="card-title">📌 เดือนที่ปักหมุด · ${pins.length}</div>
+        <span class="chip">แตะ 📌 ที่หัวเดือนเพื่อเอาออก</span>
+      </div><div class="yr-grid big" id="g"></div>`, 'pin-card');
+    host.appendChild(box);
+    const g = box.querySelector('#g');
+    pins.forEach(id => g.appendChild(monthBox(id, Number(id.slice(5)) - 1, true)));
+  }
+
 
   /** กดสถานะจ่าย — ตอนติ๊กว่าจ่ายแล้วให้ใส่วันที่จ่ายด้วย */
   function togglePaid(it, monthId) {
-    const pinBtn = () => `<button class="btn ghost wide" id="pin" style="margin-top:10px">
-      ${isPinned(it.name) ? '📌 เอาหมุดออก' : '📌 ปักหมุดไว้บนสุด'}</button>`;
-    const wirePin = body => {
-      body.querySelector('#pin').onclick = () => { togglePin(it.name); Sheet.close(); };
-    };
-
     if (it.paid) {
       Sheet.open(it.name, body => {
         body.innerHTML = `
@@ -440,13 +398,11 @@ const Screens = (() => {
           <div class="btn-row">
             <button class="btn ghost" data-close>ปิด</button>
             <button class="btn danger" id="un">ยกเลิก — กลับเป็นยังไม่จ่าย</button>
-          </div>
-          ${pinBtn()}`;
+          </div>`;
         body.querySelector('#un').onclick = () => {
           it.paid = false; delete it.paidOn;
           Store.commit(); Sheet.close(); App.render();
         };
-        wirePin(body);
       });
       return;
     }
@@ -465,7 +421,6 @@ const Screens = (() => {
         <label class="fld" style="margin-top:14px"><span>จ่ายวันที่</span>
           <input type="date" id="dt" value="${def}"></label>
         <button class="btn wide" id="ok">ยืนยันว่าจ่ายแล้ว</button>
-        ${pinBtn()}
         <div class="hint" style="margin-top:10px">
           การกดจ่ายเป็นการติ๊กเช็กลิสต์เท่านั้น ไม่กระทบยอดเงินของเดือน
         </div>`;
@@ -475,7 +430,6 @@ const Screens = (() => {
         Store.commit(); Sheet.close(); App.render();
         App.toast('ติ๊กว่าจ่ายแล้ว · ' + it.paidOn);
       };
-      wirePin(body);
     });
   }
 
