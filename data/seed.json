@@ -1,0 +1,1335 @@
+{
+ "startBalance": 500,
+ "months": [
+  {
+   "id": "2026-01",
+   "incomes": [
+    {
+     "name": "เงินเดือนตั้งต้น",
+     "amount": 14238.67
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 1",
+     "amount": 1724.74
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 2",
+     "amount": 23000.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 3",
+     "amount": 29894.75
+    }
+   ],
+   "expenses": [
+    {
+     "name": "กยศ.",
+     "amount": 1000.0,
+     "type": "debt"
+    },
+    {
+     "name": "ค่าไฟ",
+     "amount": 1200.0,
+     "type": "fixed",
+     "dueDay": 5
+    },
+    {
+     "name": "ค่าน้ำ",
+     "amount": 400.0,
+     "type": "fixed"
+    },
+    {
+     "name": "3BB",
+     "amount": 642.0,
+     "type": "fixed",
+     "dueDay": 25
+    },
+    {
+     "name": "ค่าห้อง",
+     "amount": 7000.0,
+     "type": "fixed",
+     "dueDay": 14
+    },
+    {
+     "name": "ค่ากิน (เงินสด)",
+     "amount": 2000.0,
+     "type": "variable"
+    },
+    {
+     "name": "ค่ากิน (บัตร CardX)",
+     "amount": 4000.0,
+     "type": "debt",
+     "card": "cardx",
+     "dueDay": 11
+    },
+    {
+     "name": "Shopee",
+     "amount": 2000.0,
+     "type": "variable",
+     "card": "shopeepay",
+     "dueDay": 25
+    },
+    {
+     "name": "ผ่อน TTB Flash",
+     "amount": 2808.0,
+     "type": "debt",
+     "card": "ttbflash",
+     "dueDay": 13
+    }
+   ],
+   "oneTimes": [],
+   "status": "actual"
+  },
+  {
+   "id": "2026-02",
+   "incomes": [
+    {
+     "name": "เงินเดือนตั้งต้น",
+     "amount": 23000.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 1",
+     "amount": 3275.75
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 2",
+     "amount": 3895.75
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 3",
+     "amount": 12711.07
+    }
+   ],
+   "expenses": [
+    {
+     "name": "กยศ.",
+     "amount": 1000.0,
+     "type": "debt"
+    },
+    {
+     "name": "ค่าไฟ",
+     "amount": 1200.0,
+     "type": "fixed",
+     "dueDay": 5
+    },
+    {
+     "name": "ค่าน้ำ",
+     "amount": 220.0,
+     "type": "fixed"
+    },
+    {
+     "name": "3BB",
+     "amount": 642.0,
+     "type": "fixed",
+     "dueDay": 25
+    },
+    {
+     "name": "ค่าห้อง",
+     "amount": 7000.0,
+     "type": "fixed",
+     "dueDay": 14
+    },
+    {
+     "name": "ค่ากิน (เงินสด)",
+     "amount": 13929.5,
+     "type": "variable"
+    },
+    {
+     "name": "ค่ากิน (บัตร CardX)",
+     "amount": 10000.0,
+     "type": "debt",
+     "card": "cardx",
+     "dueDay": 11
+    },
+    {
+     "name": "Shopee",
+     "amount": 3000.0,
+     "type": "variable",
+     "card": "shopeepay",
+     "dueDay": 25
+    },
+    {
+     "name": "True Wallet",
+     "amount": 3000.0,
+     "type": "variable",
+     "card": "truewallet",
+     "dueDay": 25
+    },
+    {
+     "name": "ออมโหด",
+     "amount": 5000.0,
+     "type": "saving",
+     "dueDay": 5
+    },
+    {
+     "name": "ผ่อน TTB Flash",
+     "amount": 2808.0,
+     "type": "debt",
+     "card": "ttbflash",
+     "dueDay": 13
+    }
+   ],
+   "oneTimes": [],
+   "status": "actual"
+  },
+  {
+   "id": "2026-03",
+   "incomes": [
+    {
+     "name": "เงินเดือนตั้งต้น",
+     "amount": 23000.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 1",
+     "amount": 5323.63
+    }
+   ],
+   "expenses": [
+    {
+     "name": "ส่งน้อง",
+     "amount": 5000.0,
+     "type": "variable"
+    },
+    {
+     "name": "ภาษี",
+     "amount": 4640.0,
+     "type": "fixed"
+    },
+    {
+     "name": "ค่าไฟ",
+     "amount": 2080.0,
+     "type": "fixed",
+     "dueDay": 5
+    },
+    {
+     "name": "ค่าน้ำ",
+     "amount": 110.0,
+     "type": "fixed"
+    },
+    {
+     "name": "3BB",
+     "amount": 642.0,
+     "type": "fixed",
+     "dueDay": 25
+    },
+    {
+     "name": "ค่าห้อง",
+     "amount": 7000.0,
+     "type": "fixed",
+     "dueDay": 14
+    },
+    {
+     "name": "ค่ากิน (เงินสด)",
+     "amount": 9507.0,
+     "type": "variable"
+    },
+    {
+     "name": "ค่ากิน (บัตร CardX)",
+     "amount": 8236.5,
+     "type": "debt",
+     "card": "cardx",
+     "dueDay": 11
+    },
+    {
+     "name": "Shopee",
+     "amount": 2305.16,
+     "type": "variable",
+     "card": "shopeepay",
+     "dueDay": 25
+    },
+    {
+     "name": "True Wallet",
+     "amount": 1867.5,
+     "type": "variable",
+     "card": "truewallet",
+     "dueDay": 25
+    },
+    {
+     "name": "ออมโหด",
+     "amount": 5000.0,
+     "type": "saving",
+     "dueDay": 5
+    },
+    {
+     "name": "ผ่อน TTB Flash",
+     "amount": 2808.0,
+     "type": "debt",
+     "card": "ttbflash",
+     "dueDay": 13
+    }
+   ],
+   "oneTimes": [
+    {
+     "name": "เงินก้อนพิเศษ (คาดว่าจะได้)",
+     "amount": 4700.0
+    }
+   ],
+   "status": "actual"
+  },
+  {
+   "id": "2026-04",
+   "incomes": [
+    {
+     "name": "เงินเดือนตั้งต้น",
+     "amount": 23000.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 1",
+     "amount": 2971.64
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 3",
+     "amount": 19561.09
+    }
+   ],
+   "expenses": [
+    {
+     "name": "ส่งน้อง",
+     "amount": 3500.0,
+     "type": "variable"
+    },
+    {
+     "name": "กยศ.",
+     "amount": 1000.0,
+     "type": "debt"
+    },
+    {
+     "name": "ค่าน้ำ",
+     "amount": 242.0,
+     "type": "fixed"
+    },
+    {
+     "name": "3BB",
+     "amount": 642.0,
+     "type": "fixed",
+     "dueDay": 25
+    },
+    {
+     "name": "ค่าห้อง",
+     "amount": 7000.0,
+     "type": "fixed",
+     "dueDay": 14
+    },
+    {
+     "name": "ค่ากิน (เงินสด)",
+     "amount": 10183.5,
+     "type": "variable"
+    },
+    {
+     "name": "ค่ากิน (บัตร CardX)",
+     "amount": 10668.0,
+     "type": "debt",
+     "card": "cardx",
+     "dueDay": 11
+    },
+    {
+     "name": "True Wallet",
+     "amount": 3189.0,
+     "type": "variable",
+     "card": "truewallet",
+     "dueDay": 25
+    },
+    {
+     "name": "TTB So Smart",
+     "amount": 500.0,
+     "type": "debt",
+     "card": "sosmart",
+     "dueDay": 7
+    },
+    {
+     "name": "ออมโหด",
+     "amount": 5000.0,
+     "type": "saving",
+     "dueDay": 5
+    },
+    {
+     "name": "ผ่อน TTB Flash",
+     "amount": 2808.0,
+     "type": "debt",
+     "card": "ttbflash",
+     "dueDay": 13
+    }
+   ],
+   "oneTimes": [],
+   "status": "actual"
+  },
+  {
+   "id": "2026-05",
+   "incomes": [
+    {
+     "name": "เงินเดือนตั้งต้น",
+     "amount": 22288.81
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 1",
+     "amount": 6190.41
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 2",
+     "amount": 5375.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 3",
+     "amount": 2000.0
+    }
+   ],
+   "expenses": [
+    {
+     "name": "ส่งน้อง",
+     "amount": 3500.0,
+     "type": "variable"
+    },
+    {
+     "name": "ภาษี",
+     "amount": 4640.0,
+     "type": "fixed"
+    },
+    {
+     "name": "ค่าไฟ",
+     "amount": 5975.78,
+     "type": "fixed",
+     "dueDay": 5
+    },
+    {
+     "name": "ค่าน้ำ",
+     "amount": 220.0,
+     "type": "fixed"
+    },
+    {
+     "name": "3BB",
+     "amount": 642.0,
+     "type": "fixed",
+     "dueDay": 25
+    },
+    {
+     "name": "ค่าห้อง",
+     "amount": 7000.0,
+     "type": "fixed",
+     "dueDay": 14
+    },
+    {
+     "name": "ค่ากิน (บัตร CardX)",
+     "amount": 4398.46,
+     "type": "debt",
+     "card": "cardx",
+     "dueDay": 11
+    },
+    {
+     "name": "— Suunto",
+     "amount": 742.5,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "— iPhone Air",
+     "amount": 2001.76,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "— ประกัน AIA",
+     "amount": 1654.2,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "Shopee",
+     "amount": 4293.78,
+     "type": "variable",
+     "card": "shopeepay",
+     "dueDay": 25
+    },
+    {
+     "name": "True Wallet",
+     "amount": 4253.0,
+     "type": "variable",
+     "card": "truewallet",
+     "dueDay": 25
+    },
+    {
+     "name": "— 7-Eleven",
+     "amount": 836.0,
+     "type": "variable",
+     "card": "truewallet"
+    },
+    {
+     "name": "— Makro",
+     "amount": 1643.5,
+     "type": "variable",
+     "card": "truewallet"
+    },
+    {
+     "name": "TTB So Smart",
+     "amount": 1200.0,
+     "type": "debt",
+     "card": "sosmart",
+     "dueDay": 7
+    },
+    {
+     "name": "— ค่าที่จอดรถ",
+     "amount": 1200.0,
+     "type": "fixed",
+     "card": "sosmart",
+     "dueDay": 1
+    },
+    {
+     "name": "ออมโหด",
+     "amount": 5000.0,
+     "type": "saving",
+     "dueDay": 5
+    },
+    {
+     "name": "ผ่อน TTB Flash",
+     "amount": 2808.0,
+     "type": "debt",
+     "card": "ttbflash",
+     "dueDay": 13
+    }
+   ],
+   "oneTimes": [
+    {
+     "name": "เงินก้อนพิเศษ (คาดว่าจะได้)",
+     "amount": 3000.0
+    }
+   ],
+   "status": "actual"
+  },
+  {
+   "id": "2026-06",
+   "incomes": [
+    {
+     "name": "เงินเดือนตั้งต้น",
+     "amount": 23000.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 1",
+     "amount": 18875.95
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 2",
+     "amount": 1000.0
+    }
+   ],
+   "expenses": [
+    {
+     "name": "ส่งน้อง",
+     "amount": 5000.0,
+     "type": "variable"
+    },
+    {
+     "name": "ค่าไฟ",
+     "amount": 3168.92,
+     "type": "fixed",
+     "dueDay": 5
+    },
+    {
+     "name": "ค่าน้ำ",
+     "amount": 220.0,
+     "type": "fixed"
+    },
+    {
+     "name": "3BB",
+     "amount": 642.0,
+     "type": "fixed",
+     "dueDay": 25
+    },
+    {
+     "name": "ค่าห้อง",
+     "amount": 7000.0,
+     "type": "fixed",
+     "dueDay": 14
+    },
+    {
+     "name": "ค่ากิน (เงินสด)",
+     "amount": 2000.0,
+     "type": "variable"
+    },
+    {
+     "name": "ค่ากิน (บัตร CardX)",
+     "amount": 5945.46,
+     "type": "debt",
+     "card": "cardx",
+     "dueDay": 11
+    },
+    {
+     "name": "— Suunto",
+     "amount": 742.5,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "— iPhone Air",
+     "amount": 2001.76,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "— ประกัน AIA",
+     "amount": 1654.2,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "— ค่าอื่นๆ",
+     "amount": 1547.0,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "Shopee",
+     "amount": 2720.1,
+     "type": "variable",
+     "card": "shopeepay",
+     "dueDay": 25
+    },
+    {
+     "name": "True Wallet",
+     "amount": 2082.5,
+     "type": "variable",
+     "card": "truewallet",
+     "dueDay": 25
+    },
+    {
+     "name": "— 7-Eleven",
+     "amount": 2082.5,
+     "type": "variable",
+     "card": "truewallet"
+    },
+    {
+     "name": "TTB So Smart",
+     "amount": 3800.0,
+     "type": "debt",
+     "card": "sosmart",
+     "dueDay": 7
+    },
+    {
+     "name": "— ค่าที่จอดรถ",
+     "amount": 1200.0,
+     "type": "fixed",
+     "card": "sosmart",
+     "dueDay": 1
+    },
+    {
+     "name": "— ค่าประกันรถ",
+     "amount": 1500.0,
+     "type": "fixed",
+     "card": "sosmart"
+    },
+    {
+     "name": "ออมโหด",
+     "amount": 5000.0,
+     "type": "saving",
+     "dueDay": 5
+    },
+    {
+     "name": "ผ่อน TTB Flash",
+     "amount": 2808.0,
+     "type": "debt",
+     "card": "ttbflash",
+     "dueDay": 13
+    }
+   ],
+   "oneTimes": [
+    {
+     "name": "เงินก้อนพิเศษ (คาดว่าจะได้)",
+     "amount": 22000.0
+    }
+   ],
+   "status": "predicted"
+  },
+  {
+   "id": "2026-07",
+   "incomes": [
+    {
+     "name": "เงินเดือนตั้งต้น",
+     "amount": 23000.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 1",
+     "amount": 5000.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 2",
+     "amount": 1500.0
+    }
+   ],
+   "expenses": [
+    {
+     "name": "ส่งน้อง",
+     "amount": 4000.0,
+     "type": "variable"
+    },
+    {
+     "name": "ภาษี",
+     "amount": 1547.0,
+     "type": "fixed"
+    },
+    {
+     "name": "กยศ.",
+     "amount": 1000.0,
+     "type": "debt"
+    },
+    {
+     "name": "ค่าไฟ",
+     "amount": 1200.0,
+     "type": "fixed",
+     "dueDay": 5
+    },
+    {
+     "name": "ค่าน้ำ",
+     "amount": 400.0,
+     "type": "fixed"
+    },
+    {
+     "name": "3BB",
+     "amount": 642.0,
+     "type": "fixed",
+     "dueDay": 25
+    },
+    {
+     "name": "ค่าห้อง",
+     "amount": 7000.0,
+     "type": "fixed",
+     "dueDay": 14
+    },
+    {
+     "name": "ค่ากิน (เงินสด)",
+     "amount": 2000.0,
+     "type": "variable"
+    },
+    {
+     "name": "ค่ากิน (บัตร CardX)",
+     "amount": 4398.46,
+     "type": "debt",
+     "card": "cardx",
+     "dueDay": 11
+    },
+    {
+     "name": "— Suunto",
+     "amount": 742.5,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "— iPhone Air",
+     "amount": 2001.76,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "— ประกัน AIA",
+     "amount": 1654.2,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "Shopee",
+     "amount": 587.08,
+     "type": "variable",
+     "card": "shopeepay",
+     "dueDay": 25
+    },
+    {
+     "name": "TTB So Smart",
+     "amount": 2400.0,
+     "type": "debt",
+     "card": "sosmart",
+     "dueDay": 7
+    },
+    {
+     "name": "— ค่าที่จอดรถ",
+     "amount": 1200.0,
+     "type": "fixed",
+     "card": "sosmart",
+     "dueDay": 1
+    },
+    {
+     "name": "— ค่าประกันรถ",
+     "amount": 1500.0,
+     "type": "fixed",
+     "card": "sosmart"
+    },
+    {
+     "name": "ออมโหด",
+     "amount": 5000.0,
+     "type": "saving",
+     "dueDay": 5
+    },
+    {
+     "name": "ผ่อน TTB Flash",
+     "amount": 2808.0,
+     "type": "debt",
+     "card": "ttbflash",
+     "dueDay": 13
+    }
+   ],
+   "oneTimes": [
+    {
+     "name": "เงินก้อนพิเศษ (คาดว่าจะได้)",
+     "amount": 5000.0
+    }
+   ],
+   "status": "predicted"
+  },
+  {
+   "id": "2026-08",
+   "incomes": [
+    {
+     "name": "เงินเดือนตั้งต้น",
+     "amount": 23000.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 2",
+     "amount": 1500.0
+    }
+   ],
+   "expenses": [
+    {
+     "name": "ส่งน้อง",
+     "amount": 5000.0,
+     "type": "variable"
+    },
+    {
+     "name": "ภาษี",
+     "amount": 1547.0,
+     "type": "fixed"
+    },
+    {
+     "name": "กยศ.",
+     "amount": 1000.0,
+     "type": "debt"
+    },
+    {
+     "name": "ค่าไฟ",
+     "amount": 1200.0,
+     "type": "fixed",
+     "dueDay": 5
+    },
+    {
+     "name": "ค่าน้ำ",
+     "amount": 400.0,
+     "type": "fixed"
+    },
+    {
+     "name": "3BB",
+     "amount": 642.0,
+     "type": "fixed",
+     "dueDay": 25
+    },
+    {
+     "name": "ค่าห้อง",
+     "amount": 7000.0,
+     "type": "fixed",
+     "dueDay": 14
+    },
+    {
+     "name": "ค่ากิน (เงินสด)",
+     "amount": 2000.0,
+     "type": "variable"
+    },
+    {
+     "name": "ค่ากิน (บัตร CardX)",
+     "amount": 4398.46,
+     "type": "debt",
+     "card": "cardx",
+     "dueDay": 11
+    },
+    {
+     "name": "— Suunto",
+     "amount": 742.5,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "— iPhone Air",
+     "amount": 2001.76,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "— ประกัน AIA",
+     "amount": 1654.2,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "TTB So Smart",
+     "amount": 2400.0,
+     "type": "debt",
+     "card": "sosmart",
+     "dueDay": 7
+    },
+    {
+     "name": "— ค่าที่จอดรถ",
+     "amount": 1200.0,
+     "type": "fixed",
+     "card": "sosmart",
+     "dueDay": 1
+    },
+    {
+     "name": "— ค่าประกันรถ",
+     "amount": 1500.0,
+     "type": "fixed",
+     "card": "sosmart"
+    },
+    {
+     "name": "ออมโหด",
+     "amount": 5000.0,
+     "type": "saving",
+     "dueDay": 5
+    },
+    {
+     "name": "ผ่อน TTB Flash",
+     "amount": 2808.0,
+     "type": "debt",
+     "card": "ttbflash",
+     "dueDay": 13
+    }
+   ],
+   "oneTimes": [
+    {
+     "name": "เงินก้อนพิเศษ (คาดว่าจะได้)",
+     "amount": 20000.0
+    }
+   ],
+   "status": "predicted"
+  },
+  {
+   "id": "2026-09",
+   "incomes": [
+    {
+     "name": "เงินเดือนตั้งต้น",
+     "amount": 23000.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 1",
+     "amount": 5000.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 2",
+     "amount": 1500.0
+    }
+   ],
+   "expenses": [
+    {
+     "name": "ส่งน้อง",
+     "amount": 5000.0,
+     "type": "variable"
+    },
+    {
+     "name": "กยศ.",
+     "amount": 1000.0,
+     "type": "debt"
+    },
+    {
+     "name": "ค่าไฟ",
+     "amount": 1200.0,
+     "type": "fixed",
+     "dueDay": 5
+    },
+    {
+     "name": "ค่าน้ำ",
+     "amount": 400.0,
+     "type": "fixed"
+    },
+    {
+     "name": "3BB",
+     "amount": 642.0,
+     "type": "fixed",
+     "dueDay": 25
+    },
+    {
+     "name": "ค่าห้อง",
+     "amount": 7000.0,
+     "type": "fixed",
+     "dueDay": 14
+    },
+    {
+     "name": "ค่ากิน (เงินสด)",
+     "amount": 2000.0,
+     "type": "variable"
+    },
+    {
+     "name": "ค่ากิน (บัตร CardX)",
+     "amount": 4398.46,
+     "type": "debt",
+     "card": "cardx",
+     "dueDay": 11
+    },
+    {
+     "name": "— Suunto",
+     "amount": 742.5,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "— iPhone Air",
+     "amount": 2001.76,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "— ประกัน AIA",
+     "amount": 1654.2,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "TTB So Smart",
+     "amount": 2400.0,
+     "type": "debt",
+     "card": "sosmart",
+     "dueDay": 7
+    },
+    {
+     "name": "— ค่าที่จอดรถ",
+     "amount": 1200.0,
+     "type": "fixed",
+     "card": "sosmart",
+     "dueDay": 1
+    },
+    {
+     "name": "— ค่าประกันรถ",
+     "amount": 1500.0,
+     "type": "fixed",
+     "card": "sosmart"
+    },
+    {
+     "name": "ออมโหด",
+     "amount": 5000.0,
+     "type": "saving",
+     "dueDay": 5
+    },
+    {
+     "name": "ผ่อน TTB Flash",
+     "amount": 1476.82,
+     "type": "debt",
+     "card": "ttbflash",
+     "dueDay": 13
+    }
+   ],
+   "oneTimes": [
+    {
+     "name": "เงินก้อนพิเศษ (คาดว่าจะได้)",
+     "amount": 3000.0
+    }
+   ],
+   "status": "predicted"
+  },
+  {
+   "id": "2026-10",
+   "incomes": [
+    {
+     "name": "เงินเดือนตั้งต้น",
+     "amount": 23000.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 1",
+     "amount": 5000.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 2",
+     "amount": 1500.0
+    }
+   ],
+   "expenses": [
+    {
+     "name": "ส่งน้อง",
+     "amount": 5000.0,
+     "type": "variable"
+    },
+    {
+     "name": "กยศ.",
+     "amount": 1000.0,
+     "type": "debt"
+    },
+    {
+     "name": "ค่าไฟ",
+     "amount": 1200.0,
+     "type": "fixed",
+     "dueDay": 5
+    },
+    {
+     "name": "ค่าน้ำ",
+     "amount": 400.0,
+     "type": "fixed"
+    },
+    {
+     "name": "3BB",
+     "amount": 642.0,
+     "type": "fixed",
+     "dueDay": 25
+    },
+    {
+     "name": "ค่าห้อง",
+     "amount": 7000.0,
+     "type": "fixed",
+     "dueDay": 14
+    },
+    {
+     "name": "ค่ากิน (เงินสด)",
+     "amount": 2000.0,
+     "type": "variable"
+    },
+    {
+     "name": "ค่ากิน (บัตร CardX)",
+     "amount": 4398.46,
+     "type": "debt",
+     "card": "cardx",
+     "dueDay": 11
+    },
+    {
+     "name": "— Suunto",
+     "amount": 742.5,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "— iPhone Air",
+     "amount": 2001.76,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "— ประกัน AIA",
+     "amount": 1654.2,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "TTB So Smart",
+     "amount": 2400.0,
+     "type": "debt",
+     "card": "sosmart",
+     "dueDay": 7
+    },
+    {
+     "name": "— ค่าที่จอดรถ",
+     "amount": 1200.0,
+     "type": "fixed",
+     "card": "sosmart",
+     "dueDay": 1
+    },
+    {
+     "name": "— ค่าประกันรถ",
+     "amount": 1500.0,
+     "type": "fixed",
+     "card": "sosmart"
+    },
+    {
+     "name": "ออมโหด",
+     "amount": 5000.0,
+     "type": "saving",
+     "dueDay": 5
+    }
+   ],
+   "oneTimes": [
+    {
+     "name": "เงินก้อนพิเศษ (คาดว่าจะได้)",
+     "amount": 80000.0
+    }
+   ],
+   "status": "predicted"
+  },
+  {
+   "id": "2026-11",
+   "incomes": [
+    {
+     "name": "เงินเดือนตั้งต้น",
+     "amount": 23000.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 1",
+     "amount": 5000.0
+    },
+    {
+     "name": "เงินพิเศษรอบที่ 2",
+     "amount": 1500.0
+    }
+   ],
+   "expenses": [
+    {
+     "name": "ส่งน้อง",
+     "amount": 5000.0,
+     "type": "variable"
+    },
+    {
+     "name": "กยศ.",
+     "amount": 1000.0,
+     "type": "debt"
+    },
+    {
+     "name": "ค่าไฟ",
+     "amount": 1200.0,
+     "type": "fixed",
+     "dueDay": 5
+    },
+    {
+     "name": "ค่าน้ำ",
+     "amount": 400.0,
+     "type": "fixed"
+    },
+    {
+     "name": "3BB",
+     "amount": 642.0,
+     "type": "fixed",
+     "dueDay": 25
+    },
+    {
+     "name": "ค่าห้อง",
+     "amount": 7000.0,
+     "type": "fixed",
+     "dueDay": 14
+    },
+    {
+     "name": "ค่ากิน (เงินสด)",
+     "amount": 1000.0,
+     "type": "variable"
+    },
+    {
+     "name": "ค่ากิน (บัตร CardX)",
+     "amount": 1654.2,
+     "type": "debt",
+     "card": "cardx",
+     "dueDay": 11
+    },
+    {
+     "name": "— ประกัน AIA",
+     "amount": 1654.2,
+     "type": "debt",
+     "card": "cardx"
+    },
+    {
+     "name": "— ค่าที่จอดรถ",
+     "amount": 1200.0,
+     "type": "fixed",
+     "card": "sosmart",
+     "dueDay": 1
+    },
+    {
+     "name": "— ค่าประกันรถ",
+     "amount": 1500.0,
+     "type": "fixed",
+     "card": "sosmart"
+    },
+    {
+     "name": "ออมโหด",
+     "amount": 5000.0,
+     "type": "saving",
+     "dueDay": 5
+    }
+   ],
+   "oneTimes": [],
+   "status": "predicted"
+  }
+ ],
+ "cards": [
+  {
+   "id": "cardx",
+   "name": "SCB CardX",
+   "limit": 30000,
+   "used": 10000,
+   "statementDay": 25,
+   "dueDay": 11
+  },
+  {
+   "id": "ttbflash",
+   "name": "TTB Flash",
+   "limit": 30000,
+   "used": 14000,
+   "statementDay": 30,
+   "dueDay": 13
+  },
+  {
+   "id": "truewallet",
+   "name": "True Wallet",
+   "limit": 10000,
+   "used": 2000,
+   "statementDay": 15,
+   "dueDay": 25
+  },
+  {
+   "id": "shopeepay",
+   "name": "ShopeePay",
+   "limit": 19000,
+   "used": 3000,
+   "statementDay": 25,
+   "dueDay": 5
+  },
+  {
+   "id": "sosmart",
+   "name": "TTB So Smart",
+   "limit": 20000,
+   "used": 10000,
+   "statementDay": 27,
+   "dueDay": 7
+  },
+  {
+   "id": "cardxflex",
+   "name": "CardX Flex",
+   "limit": 162000,
+   "used": 0,
+   "statementDay": 25,
+   "dueDay": 11
+  }
+ ],
+ "buckets": [
+  {
+   "id": "dream",
+   "name": "TTB Dream Save",
+   "balance": 5000,
+   "monthlyTarget": 5000
+  },
+  {
+   "id": "gold",
+   "name": "บัญชีทอง",
+   "balance": 20000,
+   "monthlyTarget": 0
+  },
+  {
+   "id": "cash",
+   "name": "เงินสด",
+   "balance": 11000,
+   "monthlyTarget": 0
+  },
+  {
+   "id": "make",
+   "name": "Make by KBank",
+   "balance": 10000,
+   "monthlyTarget": 0
+  }
+ ],
+ "savingsGoal": 250000,
+ "people": [
+  {
+   "id": "me",
+   "name": "กาย"
+  },
+  {
+   "id": "biew",
+   "name": "พี่บิว"
+  }
+ ],
+ "splits": [
+  {
+   "name": "ค่าไฟ พ.ย.",
+   "total": 1088.35,
+   "paidBy": "biew"
+  },
+  {
+   "name": "ค่าน้ำ พ.ย.",
+   "total": 587.05,
+   "paidBy": "biew"
+  },
+  {
+   "name": "ค่าเน็ต 3BB พ.ย.",
+   "total": 642.0,
+   "paidBy": "me"
+  },
+  {
+   "name": "Sukishi",
+   "total": 976.0,
+   "paidBy": "me"
+  }
+ ]
+}

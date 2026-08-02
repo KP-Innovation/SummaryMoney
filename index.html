@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FinFlow — การเงินของฉัน</title>
+<meta name="description" content="จัดการและทำนายการเงินส่วนตัว — แก้ได้ทุกช่อง ทำนายไปข้างหน้าได้จริง">
+<meta name="theme-color" content="#0a0b0f">
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FinFlow">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ── แถบข้าง (เดสก์ท็อป) / แถบล่าง (มือถือ) ── -->
+  <nav class="nav" id="nav">
+    <div class="nav-brand">
+      <span class="nav-logo">◆</span>
+      <span class="nav-title">FinFlow</span>
+    </div>
+    <button class="nav-item on" data-screen="dashboard"><i>◈</i><span>ภาพรวม</span></button>
+    <button class="nav-item" data-screen="month"><i>▤</i><span>รายเดือน</span></button>
+    <button class="nav-item" data-screen="cards"><i>▭</i><span>บัตร</span></button>
+    <button class="nav-item" data-screen="savings"><i>◇</i><span>เงินเก็บ</span></button>
+    <button class="nav-item" data-screen="forecast"><i>◊</i><span>ทำนาย</span></button>
+    <button class="nav-item" data-screen="split"><i>⇄</i><span>หารครึ่ง</span></button>
+    <div class="nav-foot">
+      <button class="nav-mini" id="btn-data" title="ข้อมูล">⋯</button>
+    </div>
+  </nav>
+
+  <!-- ── เนื้อหา ── -->
+  <main class="main" id="main"></main>
+</div>
+
+<!-- แผงลอย (แก้ไข / โน้ต / เมนู) -->
+<div class="scrim" id="scrim" hidden></div>
+<section class="sheet" id="sheet" hidden>
+  <header class="sheet-head">
+    <h2 id="sheet-title">แก้ไข</h2>
+    <button class="icon-btn" data-close>✕</button>
+  </header>
+  <div class="sheet-body" id="sheet-body"></div>
+</section>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="js/util.js"></script>
+<script src="js/store.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/chart.js"></script>
+<script src="js/edit.js"></script>
+<script src="js/screens.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
