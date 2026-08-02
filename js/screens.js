@@ -233,7 +233,172 @@ const Screens = (() => {
     return now.getDate();
   }
 
+  // ── ตัวสลับ รายปี / รายเดือน ──
   function calendar(host) {
+    const seg = el(`<div class="card" style="display:flex;justify-content:center;padding:10px">
+      <div class="seg">
+        <button data-m="year">รายปี</button>
+        <button data-m="month">รายเดือน</button>
+      </div></div>`);
+    const mode = App.state.calMode || 'year';
+    seg.querySelectorAll('button').forEach(b => {
+      b.classList.toggle('on', b.dataset.m === mode);
+      b.onclick = () => { App.state.calMode = b.dataset.m; App.render(); };
+    });
+    host.appendChild(seg);
+    (mode === 'year' ? yearView : monthCalendar)(host);
+  }
+
+  // ═══════════ ปฏิทินรายปี — ภาพรวม 12 เดือน + เช็กลิสต์ ═══════════
+  //
+  //  เจตนา: ดูรวดเดียวว่าทั้งปีมีภาระอะไรบ้าง อันไหนจ่ายแล้ว อันไหนยังค้าง
+  //  ส้ม = ยังไม่จ่าย · เขียว = จ่ายแล้ว · แตะเพื่อสลับสถานะ (ตอนกดจ่ายจะถามวันที่จ่าย)
+  //  จงใจไม่ลงรายละเอียดระดับวัน — ถ้าอยากดูรายวันให้สลับไปโหมด "รายเดือน"
+
+  /** รายการที่ถือเป็น "ภาระที่ต้องจ่าย" ของเดือน (ตัดรายจ่ายผันแปรจิปาถะออก) */
+  const dutiesOf = m => m.expenses.filter(e => e.type !== 'variable' && !/^—/.test(e.name));
+
+  function yearView(host) {
+    const D = Store.get();
+    const year = Number((App.state.month || Store.thisMonth()).slice(0, 4));
+    const now = new Date();
+    const nowId = Store.thisMonth();
+
+    const ids = Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, '0')}`);
+    const boxes = ids.map(id => Store.month(id));
+
+    let doneAll = 0, totalAll = 0, leftAmt = 0;
+    boxes.forEach(m => {
+      if (!m) return;
+      const d = dutiesOf(m);
+      totalAll += d.length;
+      doneAll += d.filter(x => x.paid).length;
+      leftAmt += sum(d.filter(x => !x.paid), x => x.amount);
+    });
+
+    const head = card(`
+      <div class="monthbar">
+        <button class="icon-btn" id="py">‹</button>
+        <div class="m-label">ปี ${year + 543}</div>
+        <button class="icon-btn" id="ny">›</button>
+      </div>
+      <div class="kv"><span class="kv-k">จ่ายแล้วทั้งปี</span>
+        <span class="kv-v num">${doneAll} / ${totalAll} รายการ</span></div>
+      <div class="bar" style="margin:6px 0 12px">
+        <i style="width:${totalAll ? doneAll / totalAll * 100 : 0}%;background:linear-gradient(90deg,#34d399,#38bdf8)"></i></div>
+      <div class="kv"><span class="kv-k">ยังไม่จ่ายรวม</span>
+        <span class="kv-v num warn">${money(leftAmt)} ฿</span></div>
+      <button class="btn ghost wide" id="prep" style="margin-top:12px">เตรียมภาระประจำให้ครบทั้งปี</button>`);
+    host.appendChild(head);
+    head.querySelector('#py').onclick = () => { App.state.month = `${year - 1}-01`; App.render(); };
+    head.querySelector('#ny').onclick = () => { App.state.month = `${year + 1}-01`; App.render(); };
+    head.querySelector('#prep').onclick = () => {
+      let n = 0;
+      ids.forEach(id => { Store.ensureMonth(id); n += Store.applyRecurring(id); });
+      Store.commit(); App.render();
+      App.toast(n ? `เติมภาระประจำ ${n} รายการทั้งปี` : 'ครบอยู่แล้วทั้งปี');
+    };
+
+    const grid = el('<div class="yr-grid"></div>');
+    host.appendChild(grid);
+
+    ids.forEach((id, i) => {
+      const m = Store.month(id);
+      const duties = m ? dutiesOf(m) : [];
+      const done = duties.filter(x => x.paid).length;
+      const others = m ? m.expenses.length - duties.length : 0;
+
+      const box = el(`<div class="yr-month ${id === nowId ? 'now' : ''}">
+        <div class="yr-head">
+          <span class="yr-name">${U.TH_MONTH[i]}</span>
+          <span class="yr-cnt ${duties.length && done === duties.length ? 'all' : ''}">${
+            duties.length ? `${done}/${duties.length}` : '—'}</span>
+        </div>
+        <div class="yr-items"></div>
+      </div>`);
+      const box2 = box.querySelector('.yr-items');
+
+      if (!m || !duties.length) {
+        const e = el('<div class="yr-empty">แตะเพื่อเติมภาระประจำ</div>');
+        e.onclick = () => {
+          Store.ensureMonth(id); Store.applyRecurring(id);
+          Store.commit(); App.render();
+        };
+        box2.appendChild(e);
+      } else {
+        duties.forEach(it => {
+          const b = el(`<button class="yr-item ${it.paid ? 'done' : ''}">
+            <span class="s">${it.paid ? '✓' : '○'}</span>
+            <span class="t">${esc(it.name)}</span>
+            <span class="a">${money(it.amount)}</span></button>`);
+          b.title = it.paid && it.paidOn ? `จ่ายเมื่อ ${it.paidOn}` : 'ยังไม่จ่าย';
+          b.onclick = () => togglePaid(it, id);
+          box2.appendChild(b);
+        });
+        if (others > 0) box2.appendChild(el(`<div class="yr-more">+ อื่นๆ ${others} รายการ</div>`));
+      }
+
+      box.querySelector('.yr-head').style.cursor = 'pointer';
+      box.querySelector('.yr-head').onclick = () => {
+        App.state.month = id; App.state.calMode = 'month'; App.render();
+      };
+      grid.appendChild(box);
+    });
+
+    host.appendChild(card(`<div class="hint">
+      <b style="color:#fdba74">ส้ม</b> = ยังไม่จ่าย · <b style="color:#6ee7b7">เขียว</b> = จ่ายแล้ว ·
+      แตะรายการเพื่อสลับสถานะ · แตะชื่อเดือนเพื่อดูรายวัน<br>
+      แสดงเฉพาะภาระที่ต้องจ่ายประจำ (ไม่รวมรายจ่ายผันแปรจิปาถะ)
+    </div>`));
+  }
+
+  /** กดสถานะจ่าย — ตอนติ๊กว่าจ่ายแล้วให้ใส่วันที่จ่ายด้วย */
+  function togglePaid(it, monthId) {
+    if (it.paid) {
+      Sheet.open(it.name, body => {
+        body.innerHTML = `
+          <div class="hint" style="margin-bottom:14px">
+            จ่ายแล้วเมื่อ <b style="color:var(--text)">${it.paidOn || 'ไม่ได้ระบุวัน'}</b>
+            · ${money(it.amount)} ฿</div>
+          <div class="btn-row">
+            <button class="btn ghost" data-close>ปิด</button>
+            <button class="btn danger" id="un">ยกเลิก — กลับเป็นยังไม่จ่าย</button>
+          </div>`;
+        body.querySelector('#un').onclick = () => {
+          it.paid = false; delete it.paidOn;
+          Store.commit(); Sheet.close(); App.render();
+        };
+      });
+      return;
+    }
+
+    // ตั้งค่าเริ่มต้นเป็นวันครบกำหนดของเดือนนั้น ถ้าไม่มีก็วันนี้ — กดยืนยันรวดเดียวจบ
+    const [y, mo] = monthId.split('-').map(Number);
+    const dim = new Date(y, mo, 0).getDate();
+    const day = U.clamp(Number(it.dueDay) || new Date().getDate(), 1, dim);
+    const def = `${monthId}-${String(day).padStart(2, '0')}`;
+
+    Sheet.open('จ่าย "' + it.name + '"', body => {
+      body.innerHTML = `
+        <div class="kv" style="padding-bottom:12px;border-bottom:1px solid var(--line)">
+          <span class="kv-k">จำนวนเงิน</span>
+          <span class="kv-v num neg">${money(it.amount)} ฿</span></div>
+        <label class="fld" style="margin-top:14px"><span>จ่ายวันที่</span>
+          <input type="date" id="dt" value="${def}"></label>
+        <button class="btn wide" id="ok">ยืนยันว่าจ่ายแล้ว</button>
+        <div class="hint" style="margin-top:10px">
+          การกดจ่ายเป็นการติ๊กเช็กลิสต์เท่านั้น ไม่กระทบยอดเงินของเดือน
+        </div>`;
+      body.querySelector('#ok').onclick = () => {
+        it.paid = true;
+        it.paidOn = body.querySelector('#dt').value || def;
+        Store.commit(); Sheet.close(); App.render();
+        App.toast('ติ๊กว่าจ่ายแล้ว · ' + it.paidOn);
+      };
+    });
+  }
+
+  function monthCalendar(host) {
     const D = Store.get();
     const id = App.state.month;
     const m = Store.ensureMonth(id);

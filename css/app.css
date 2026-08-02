@@ -280,6 +280,59 @@ body {
   .cal-net { font-size: 10px; }
 }
 
+/* ══ ปฏิทินรายปี ══ */
+.seg {
+  display: inline-flex; gap: 3px; padding: 3px;
+  background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 11px;
+}
+.seg button {
+  padding: 7px 16px; border: 0; border-radius: 8px; cursor: pointer;
+  background: none; color: var(--text-2); font: inherit; font-size: 13px; font-weight: 700;
+  transition: background .15s, color .15s;
+}
+.seg button.on { background: var(--surface-2); color: var(--text); }
+
+.yr-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.yr-month {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px; padding: 12px 12px 10px;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.yr-month.now { border-color: var(--accent); background: rgba(129,140,248,.07); }
+.yr-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.yr-name { font-size: 14px; font-weight: 800; letter-spacing: -.02em; }
+.yr-cnt { font-size: 11px; font-weight: 700; color: var(--text-3); }
+.yr-cnt.all { color: var(--pos); }
+
+.yr-items { display: flex; flex-direction: column; gap: 4px; }
+.yr-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px; border-radius: 8px; cursor: pointer;
+  border: 1px solid transparent; font: inherit; text-align: left; width: 100%;
+  background: rgba(251,146,60,.13); color: #fdba74;
+  transition: transform .12s var(--ease), filter .15s;
+}
+.yr-item:hover { filter: brightness(1.22); }
+.yr-item:active { transform: scale(.97); }
+.yr-item.done { background: rgba(52,211,153,.13); color: #6ee7b7; }
+.yr-item .t { flex: 1; min-width: 0; font-size: 11.5px; font-weight: 600;
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.yr-item .a { font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; opacity: .85; }
+.yr-item .s { font-size: 11px; width: 12px; flex-shrink: 0; }
+.yr-item.done .t { text-decoration: line-through; opacity: .72; }
+
+.yr-more { font-size: 10.5px; color: var(--text-3); padding: 2px 2px 0; }
+.yr-empty {
+  padding: 14px 6px; text-align: center; font-size: 11.5px; color: var(--text-3);
+  border: 1px dashed var(--line-2); border-radius: 9px; cursor: pointer;
+}
+.yr-empty:hover { color: var(--text); border-color: var(--accent); }
+
+@media (max-width: 1100px) { .yr-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 780px)  { .yr-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+                             .yr-month { padding: 10px 9px 8px; border-radius: 12px; } }
+@media (max-width: 380px)  { .yr-grid { grid-template-columns: 1fr; } }
+
 /* ══ แผงลอย ══ */
 .scrim { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.62); backdrop-filter: blur(3px); }
 .sheet {
