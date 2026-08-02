@@ -26,6 +26,7 @@ const Store = (() => {
     d.savingsGoal ??= 0;
     d.assumptions ??= { incomeAdj: 0, expenseAdj: 0, extraSaving: 0, closedCards: [] };
     d.recurring ??= [];
+    d.pinned ??= [];        // ชื่อภาระที่ปักหมุดไว้ดูบนสุดของปฏิทินรายปี
 
     for (const m of d.months) {
       m.status ??= 'predicted';

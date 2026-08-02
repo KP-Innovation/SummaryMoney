@@ -276,6 +276,8 @@ const Screens = (() => {
       leftAmt += sum(d.filter(x => !x.paid), x => x.amount);
     });
 
+    pinCard(host, year, ids);
+
     const head = card(`
       <div class="monthbar">
         <button class="icon-btn" id="py">‹</button>
@@ -352,8 +354,83 @@ const Screens = (() => {
     </div>`));
   }
 
+  // ── การ์ดปักหมุด ────────────────────────────────────────────
+  //  ปักหมุด "ตามชื่อภาระ" ไม่ใช่ตามรายการของเดือนใดเดือนหนึ่ง
+  //  เพราะสิ่งที่อยากจับตาคือ "ค่าห้องทั้งปีจ่ายครบยัง" ไม่ใช่ "ค่าห้องเดือน ม.ค."
+  //  ผลคือได้แถบสถานะ 12 ช่องต่อหนึ่งภาระ กดเปลี่ยนสถานะได้ตรงนั้นเลย
+
+  const isPinned = name => (Store.get().pinned || []).includes(name);
+
+  function togglePin(name) {
+    const D = Store.get();
+    D.pinned = isPinned(name) ? D.pinned.filter(x => x !== name) : [...(D.pinned || []), name];
+    Store.commit(); App.render();
+    App.toast(isPinned(name) ? 'ปักหมุดแล้ว — ขึ้นไปอยู่บนสุด' : 'เอาหมุดออกแล้ว');
+  }
+
+  function pinCard(host, year, ids) {
+    const D = Store.get();
+    const pinned = D.pinned || [];
+    const nowId = Store.thisMonth();
+
+    if (!pinned.length) {
+      host.appendChild(card(`<div class="pin-empty">
+        <b style="color:var(--text)">📌 ปักหมุดไว้จับตา</b><br>
+        แตะรายการไหนก็ได้ในปฏิทินข้างล่าง แล้วกด <b>ปักหมุด</b>
+        มันจะขึ้นมาอยู่บนสุดพร้อมสถานะครบทั้ง 12 เดือนในแถวเดียว
+      </div>`, 'pin-card'));
+      return;
+    }
+
+    const box = card(`<div class="card-head">
+        <div class="card-title">📌 โฟกัส · ${pinned.length} รายการ</div>
+        <span class="chip">แตะช่องเดือนเพื่อเปลี่ยนสถานะ</span>
+      </div><div id="rows"></div>`, 'pin-card');
+    host.appendChild(box);
+    const rows = box.querySelector('#rows');
+
+    pinned.forEach(name => {
+      // หารายการชื่อนี้ในแต่ละเดือนของปีนั้น
+      const cells = ids.map(id => {
+        const m = Store.month(id);
+        return { id, it: m ? m.expenses.find(e => e.name === name) : null };
+      });
+      const have = cells.filter(c => c.it);
+      const done = have.filter(c => c.it.paid).length;
+      const amt = have[0]?.it.amount;
+
+      const row = el(`<div class="pin-row">
+        <div class="pin-head">
+          <span class="pin-name">${esc(name)}</span>
+          ${amt != null ? `<span class="pin-stat num">${money(amt)} ฿</span>` : ''}
+          <span class="pin-stat ${have.length && done === have.length ? 'all' : ''}">${done}/${have.length}</span>
+          <button class="pin-unpin" title="เอาหมุดออก">✕</button>
+        </div>
+        <div class="pin-strip"></div>
+      </div>`);
+
+      const strip = row.querySelector('.pin-strip');
+      cells.forEach((c, i) => {
+        const cls = !c.it ? 'none' : c.it.paid ? 'done' : '';
+        const b = el(`<button class="pin-cell ${cls} ${c.id === nowId ? 'now' : ''}"
+          title="${U.TH_MONTH[i]} ${!c.it ? 'ไม่มีรายการ' : c.it.paid ? 'จ่ายแล้ว ' + (c.it.paidOn || '') : 'ยังไม่จ่าย'}">${i + 1}</button>`);
+        if (c.it) b.onclick = () => togglePaid(c.it, c.id);
+        strip.appendChild(b);
+      });
+
+      row.querySelector('.pin-unpin').onclick = () => togglePin(name);
+      rows.appendChild(row);
+    });
+  }
+
   /** กดสถานะจ่าย — ตอนติ๊กว่าจ่ายแล้วให้ใส่วันที่จ่ายด้วย */
   function togglePaid(it, monthId) {
+    const pinBtn = () => `<button class="btn ghost wide" id="pin" style="margin-top:10px">
+      ${isPinned(it.name) ? '📌 เอาหมุดออก' : '📌 ปักหมุดไว้บนสุด'}</button>`;
+    const wirePin = body => {
+      body.querySelector('#pin').onclick = () => { togglePin(it.name); Sheet.close(); };
+    };
+
     if (it.paid) {
       Sheet.open(it.name, body => {
         body.innerHTML = `
@@ -363,11 +440,13 @@ const Screens = (() => {
           <div class="btn-row">
             <button class="btn ghost" data-close>ปิด</button>
             <button class="btn danger" id="un">ยกเลิก — กลับเป็นยังไม่จ่าย</button>
-          </div>`;
+          </div>
+          ${pinBtn()}`;
         body.querySelector('#un').onclick = () => {
           it.paid = false; delete it.paidOn;
           Store.commit(); Sheet.close(); App.render();
         };
+        wirePin(body);
       });
       return;
     }
@@ -386,6 +465,7 @@ const Screens = (() => {
         <label class="fld" style="margin-top:14px"><span>จ่ายวันที่</span>
           <input type="date" id="dt" value="${def}"></label>
         <button class="btn wide" id="ok">ยืนยันว่าจ่ายแล้ว</button>
+        ${pinBtn()}
         <div class="hint" style="margin-top:10px">
           การกดจ่ายเป็นการติ๊กเช็กลิสต์เท่านั้น ไม่กระทบยอดเงินของเดือน
         </div>`;
@@ -395,6 +475,7 @@ const Screens = (() => {
         Store.commit(); Sheet.close(); App.render();
         App.toast('ติ๊กว่าจ่ายแล้ว · ' + it.paidOn);
       };
+      wirePin(body);
     });
   }
 

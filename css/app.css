@@ -73,8 +73,15 @@ body {
   background: rgba(255,255,255,.014);
 }
 .nav-brand { display: flex; align-items: center; gap: 9px; padding: 4px 10px 20px; }
-.nav-logo { font-size: 17px; color: var(--accent); }
+.nav-logo { color: var(--accent); display: grid; place-items: center; }
+.nav-logo svg { width: 21px; height: 21px; }
 .nav-title { font-weight: 800; font-size: 16.5px; letter-spacing: -.02em; }
+
+/* ไอคอนทั้งแถบใช้สโตรกชุดเดียวกัน จะได้ดูเป็นระบบเดียว */
+.nav svg {
+  stroke: currentColor; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round;
+}
 
 .nav-item {
   display: flex; align-items: center; gap: 12px;
@@ -83,7 +90,8 @@ body {
   font: inherit; font-size: 14.5px; font-weight: 600; text-align: left;
   transition: background .16s var(--ease), color .16s var(--ease);
 }
-.nav-item i { font-style: normal; font-size: 15px; width: 18px; text-align: center; opacity: .8; }
+.nav-item i { display: grid; place-items: center; width: 20px; flex-shrink: 0; opacity: .78; }
+.nav-item i svg { width: 20px; height: 20px; }
 .nav-item:hover { background: var(--surface); color: var(--text); }
 .nav-item.on { background: var(--surface-2); color: var(--text); }
 .nav-item.on i { color: var(--accent); opacity: 1; }
@@ -280,6 +288,38 @@ body {
   .cal-net { font-size: 10px; }
 }
 
+/* ══ การ์ดปักหมุด (โฟกัส) ══ */
+.pin-card { border-color: rgba(129,140,248,.34); background: rgba(129,140,248,.055); }
+.pin-row { padding: 11px 0; border-bottom: 1px solid var(--line); }
+.pin-row:last-child { border-bottom: 0; padding-bottom: 2px; }
+.pin-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.pin-name { font-size: 14.5px; font-weight: 700; flex: 1; min-width: 0;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pin-stat { font-size: 11.5px; font-weight: 700; color: var(--text-3); white-space: nowrap; }
+.pin-stat.all { color: var(--pos); }
+.pin-unpin { border: 0; background: none; color: var(--text-3); cursor: pointer;
+             font-size: 13px; padding: 2px 5px; border-radius: 6px; }
+.pin-unpin:hover { color: var(--neg); background: var(--surface-2); }
+
+.pin-strip { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; }
+.pin-cell {
+  aspect-ratio: 1; min-height: 26px;
+  display: grid; place-items: center;
+  border: 1px solid transparent; border-radius: 6px; cursor: pointer;
+  font: inherit; font-size: 10px; font-weight: 800;
+  background: rgba(251,146,60,.16); color: #fdba74;
+  transition: transform .12s var(--ease), filter .15s;
+}
+.pin-cell:hover { filter: brightness(1.25); }
+.pin-cell:active { transform: scale(.9); }
+.pin-cell.done { background: rgba(52,211,153,.16); color: #6ee7b7; }
+.pin-cell.none { background: rgba(255,255,255,.04); color: var(--text-3); cursor: default; }
+.pin-cell.now  { outline: 1.5px solid var(--accent); outline-offset: -1.5px; }
+
+.pin-empty { font-size: 12.5px; color: var(--text-3); line-height: 1.65; }
+
+@media (max-width: 480px) { .pin-cell { min-height: 22px; font-size: 9px; } .pin-strip { gap: 2px; } }
+
 /* ══ ปฏิทินรายปี ══ */
 .seg {
   display: inline-flex; gap: 3px; padding: 3px;
@@ -409,8 +449,8 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
     flex: 1; flex-direction: column; gap: 3px; justify-content: center;
     padding: 8px 2px; border-radius: 0; background: none !important;
   }
-  .nav-item i { font-size: 16px; }
-  .nav-item span { font-size: 10px; font-weight: 600; }
+  .nav-item i svg { width: 19px; height: 19px; }
+  .nav-item span { font-size: 9.5px; font-weight: 600; }
   .nav-item.on { color: var(--text); }
   .grid.g2, .grid.g3 { grid-template-columns: 1fr 1fr; }
   .card { padding: 16px; border-radius: 16px; }
