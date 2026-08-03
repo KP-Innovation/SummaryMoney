@@ -314,41 +314,81 @@ const Screens = (() => {
   }
 
   // ── ช่องเดือนหนึ่งช่อง (ใช้ทั้งในกริดรายปีและในโซนปักหมุด) ──
+  //
+  //  ต้องแก้ได้ทุกมิติตรงนี้เลย ไม่ต้องเด้งไปหน้าอื่น เพราะค่าจริงไม่คงที่:
+  //  ภาษีแต่ละเดือนไม่เท่ากัน · โปะบัตรก็ไม่เท่ากัน · บางเดือนมีของไม่คาดคิดโผล่มา
+  //  แตะรายการ = เปิดแผงแก้ได้ทั้ง ชื่อ / จำนวน / หมวด / วันครบกำหนด / โน้ต / สถานะ / ลบ
+
+  const incomesOf = m => (m ? [...m.incomes, ...m.oneTimes] : []);
+  const extrasOf  = m => (m ? m.expenses.filter(e => e.type === 'variable' || /^—/.test(e.name)) : []);
+
+  function itemRow(it, monthId, kind, list) {
+    const money2 = (kind === 'in' ? '+' : '') + money(it.amount);
+    const b = el(`<button class="yr-item ${it.paid ? 'done' : ''} ${kind === 'in' ? 'inc' : ''}">
+      <span class="s">${it.paid ? '✓' : '○'}</span>
+      <span class="t">${esc(it.name)}</span>
+      <span class="a">${money2}</span></button>`);
+    b.title = it.paid
+      ? (kind === 'in' ? 'เข้าแล้ว ' : 'จ่ายแล้ว ') + (it.paidOn || '')
+      : 'แตะเพื่อแก้ไข / เปลี่ยนสถานะ';
+    b.onclick = () => itemSheet(it, monthId, kind, list);
+    return b;
+  }
+
   function monthBox(id, i, big = false) {
     const m = Store.month(id);
     const duties = m ? dutiesOf(m) : [];
-    const done = duties.filter(x => x.paid).length;
-    const others = m ? m.expenses.length - duties.length : 0;
+    const extras = extrasOf(m);
+    const incomes = incomesOf(m);
+    const all = [...incomes, ...duties, ...extras];
+    const done = all.filter(x => x.paid).length;
     const nowId = Store.thisMonth();
     const pinned = isPinned(id);
+    const open = App.state.expand?.has(id);
 
     const box = el(`<div class="yr-month ${id === nowId ? 'now' : ''} ${big ? 'big' : ''}">
       <div class="yr-head">
         <span class="yr-name">${U.TH_MONTH[i]}${big ? ' ' + (Number(id.slice(0, 4)) + 543) : ''}</span>
-        <span class="yr-cnt ${duties.length && done === duties.length ? 'all' : ''}">${
-          duties.length ? `${done}/${duties.length}` : '—'}</span>
+        <span class="yr-cnt ${all.length && done === all.length ? 'all' : ''}">${
+          all.length ? `${done}/${all.length}` : '—'}</span>
         <button class="yr-pin ${pinned ? 'on' : ''}" title="${pinned ? 'เอาหมุดออก' : 'ปักหมุดขึ้นบนสุด'}">📌</button>
       </div>
       <div class="yr-items"></div>
     </div>`);
 
     const items = box.querySelector('.yr-items');
-    if (!m || !duties.length) {
+
+    if (!m) {
       const e = el('<div class="yr-empty">แตะเพื่อเติมภาระประจำ</div>');
       e.onclick = () => { Store.ensureMonth(id); Store.applyRecurring(id); Store.commit(); App.render(); };
       items.appendChild(e);
     } else {
-      duties.forEach(it => {
-        const b = el(`<button class="yr-item ${it.paid ? 'done' : ''}">
-          <span class="s">${it.paid ? '✓' : '○'}</span>
-          <span class="t">${esc(it.name)}</span>
-          <span class="a">${money(it.amount)}</span></button>`);
-        b.title = it.paid && it.paidOn ? `จ่ายเมื่อ ${it.paidOn}` : 'ยังไม่จ่าย';
-        b.onclick = () => togglePaid(it, id);
-        items.appendChild(b);
-      });
-      if (others > 0) items.appendChild(el(`<div class="yr-more">+ อื่นๆ ${others} รายการ</div>`));
+      incomes.forEach(it => items.appendChild(itemRow(it, id, 'in',
+        m.incomes.includes(it) ? m.incomes : m.oneTimes)));
+      duties.forEach(it => items.appendChild(itemRow(it, id, 'out', m.expenses)));
+
+      // รายจ่ายผันแปร/รายการย่อย ซ่อนไว้ก่อนเพื่อไม่ให้ช่องยาวเกิน แต่กดดูและแก้ได้
+      if (extras.length) {
+        if (open) extras.forEach(it => items.appendChild(itemRow(it, id, 'out', m.expenses)));
+        const t = el(`<button class="yr-more">${open ? '− ซ่อนรายการผันแปร' : `+ ผันแปรอีก ${extras.length} รายการ`}</button>`);
+        t.onclick = () => {
+          App.state.expand ??= new Set();
+          open ? App.state.expand.delete(id) : App.state.expand.add(id);
+          App.render();
+        };
+        items.appendChild(t);
+      }
+      if (!all.length) {
+        const e = el('<div class="yr-empty">แตะเพื่อเติมภาระประจำ</div>');
+        e.onclick = () => { Store.applyRecurring(id); Store.commit(); App.render(); };
+        items.appendChild(e);
+      }
     }
+
+    // เพิ่มของไม่คาดคิด / รายรับ ได้ตรงนี้เลย ไม่ต้องเปลี่ยนหน้า
+    const add = el('<button class="yr-add">+ เพิ่มรายการ</button>');
+    add.onclick = () => { Store.ensureMonth(id); quickAdd(id, 1); };
+    items.appendChild(add);
 
     box.querySelector('.yr-pin').onclick = e => { e.stopPropagation(); togglePin(id); };
     const nameEl = box.querySelector('.yr-name');
@@ -359,7 +399,6 @@ const Screens = (() => {
 
   // ── โซนปักหมุด: เดือนที่สนใจถูกยกขึ้นมาไว้บนสุด ──
   //  ปักหมุดทั้งเดือน ไม่ใช่รายรายการ — เจตนาคือ "จ้องเดือนนี้เป็นพิเศษ"
-  //  ช่องที่ปักจะกว้างกว่าปกติ (2 คอลัมน์) เพื่อให้อ่านเช็กลิสต์ได้สบายตา
 
   const isPinned = id => (Store.get().pinned || []).includes(id);
 
@@ -386,52 +425,100 @@ const Screens = (() => {
     pins.forEach(id => g.appendChild(monthBox(id, Number(id.slice(5)) - 1, true)));
   }
 
-
-  /** กดสถานะจ่าย — ตอนติ๊กว่าจ่ายแล้วให้ใส่วันที่จ่ายด้วย */
-  function togglePaid(it, monthId) {
-    if (it.paid) {
-      Sheet.open(it.name, body => {
-        body.innerHTML = `
-          <div class="hint" style="margin-bottom:14px">
-            จ่ายแล้วเมื่อ <b style="color:var(--text)">${it.paidOn || 'ไม่ได้ระบุวัน'}</b>
-            · ${money(it.amount)} ฿</div>
-          <div class="btn-row">
-            <button class="btn ghost" data-close>ปิด</button>
-            <button class="btn danger" id="un">ยกเลิก — กลับเป็นยังไม่จ่าย</button>
-          </div>`;
-        body.querySelector('#un').onclick = () => {
-          it.paid = false; delete it.paidOn;
-          Store.commit(); Sheet.close(); App.render();
-        };
-      });
-      return;
-    }
-
-    // ตั้งค่าเริ่มต้นเป็นวันครบกำหนดของเดือนนั้น ถ้าไม่มีก็วันนี้ — กดยืนยันรวดเดียวจบ
+  /**
+   * แผงรายการเดียว — one stop service
+   * แก้ได้ครบทั้ง ชื่อ · จำนวน (พิมพ์สูตรได้) · หมวด · วันครบกำหนด · โน้ต · สถานะ · ลบ
+   * เจตนา: ค่าจริงของผู้ใช้ไม่คงที่ (ภาษี/โปะบัตรไม่เท่ากันทุกเดือน)
+   *        จึงต้องแก้ตัวเลขได้ทุกเดือนโดยไม่กระทบเดือนอื่น
+   */
+  function itemSheet(it, monthId, kind, list) {
     const [y, mo] = monthId.split('-').map(Number);
     const dim = new Date(y, mo, 0).getDate();
     const day = U.clamp(Number(it.dueDay) || new Date().getDate(), 1, dim);
-    const def = `${monthId}-${String(day).padStart(2, '0')}`;
+    const def = it.paidOn || `${monthId}-${String(day).padStart(2, '0')}`;
+    const isIn = kind === 'in';
 
-    Sheet.open('จ่าย "' + it.name + '"', body => {
+    Sheet.open(`${U.TH_MONTH[mo - 1]} · ${it.name}`, body => {
       body.innerHTML = `
-        <div class="kv" style="padding-bottom:12px;border-bottom:1px solid var(--line)">
-          <span class="kv-k">จำนวนเงิน</span>
-          <span class="kv-v num neg">${money(it.amount)} ฿</span></div>
-        <label class="fld" style="margin-top:14px"><span>จ่ายวันที่</span>
-          <input type="date" id="dt" value="${def}"></label>
-        <button class="btn wide" id="ok">ยืนยันว่าจ่ายแล้ว</button>
+        <label class="fld"><span>ชื่อรายการ</span>
+          <input type="text" id="nm" value="${esc(it.name)}"></label>
+
+        <label class="fld"><span>จำนวนเงิน — พิมพ์สูตรได้ เช่น <b>2808+500</b> หรือ <b>1200*2</b></span>
+          <input type="text" id="am" inputmode="decimal" value="${it.amount}"></label>
+
+        <div class="grid g2">
+          ${isIn ? '' : `<label class="fld"><span>หมวด</span>
+            <select id="tp">
+              <option value="fixed">รายจ่ายประจำ</option>
+              <option value="variable">ผันแปร</option>
+              <option value="debt">หนี้ / บัตร</option>
+              <option value="saving">เงินออม</option>
+            </select></label>`}
+          <label class="fld"><span>${isIn ? 'วันที่คาดว่าเข้า' : 'วันครบกำหนด'} (1–31)</span>
+            <input type="number" id="dd" min="1" max="31" value="${it.dueDay || ''}"></label>
+        </div>
+
+        <label class="fld"><span>โน้ต</span>
+          <textarea id="nt" placeholder="เช่น เดือนนี้โปะเพิ่ม 2,000">${esc(it.note || '')}</textarea></label>
+
+        <div class="fld" style="border-top:1px solid var(--line);padding-top:14px">
+          <span style="display:block;font-size:12px;color:var(--text-2);margin-bottom:6px">
+            สถานะ — ${it.paid ? (isIn ? 'เข้าแล้ว' : 'จ่ายแล้ว') : (isIn ? 'ยังไม่เข้า' : 'ยังไม่จ่าย')}</span>
+          <input type="date" id="dt" value="${def}">
+        </div>
+        <div class="btn-row">
+          ${it.paid
+            ? '<button class="btn ghost" id="un">กลับเป็นยังไม่' + (isIn ? 'เข้า' : 'จ่าย') + '</button>'
+            : '<button class="btn" id="pay">✓ ' + (isIn ? 'เข้าแล้ว' : 'จ่ายแล้ว') + '</button>'}
+          <button class="btn" id="save">บันทึกการแก้ไข</button>
+        </div>
+
+        <button class="btn danger wide" id="del" style="margin-top:14px">ลบรายการนี้</button>
         <div class="hint" style="margin-top:10px">
-          การกดจ่ายเป็นการติ๊กเช็กลิสต์เท่านั้น ไม่กระทบยอดเงินของเดือน
+          แก้ตรงนี้มีผลกับ <b>เดือนนี้เดือนเดียว</b> — เดือนอื่นไม่ขยับ<br>
+          ถ้าอยากเปลี่ยนทุกเดือน ให้ไปแก้ที่ <b>ภาระประจำ</b> ในโหมดรายเดือน
         </div>`;
-      body.querySelector('#ok').onclick = () => {
+
+      if (!isIn) body.querySelector('#tp').value = it.type || 'variable';
+
+      /** อ่านค่าจากฟอร์มลงรายการ — ใช้ร่วมกันทั้งตอนบันทึกและตอนกดสถานะ */
+      const apply = () => {
+        const nm = body.querySelector('#nm').value.trim();
+        if (nm) it.name = nm;
+        const v = U.calc(body.querySelector('#am').value);
+        if (v !== null) it.amount = v;
+        const d = Number(body.querySelector('#dd').value);
+        if (d >= 1 && d <= 31) it.dueDay = d; else delete it.dueDay;
+        it.note = body.querySelector('#nt').value.trim();
+        if (!isIn) it.type = body.querySelector('#tp').value;
+      };
+
+      body.querySelector('#save').onclick = () => {
+        apply(); Store.commit(); Sheet.close(); App.render(); App.toast('บันทึกแล้ว');
+      };
+      body.querySelector('#pay')?.addEventListener('click', () => {
+        apply();
         it.paid = true;
         it.paidOn = body.querySelector('#dt').value || def;
         Store.commit(); Sheet.close(); App.render();
-        App.toast('ติ๊กว่าจ่ายแล้ว · ' + it.paidOn);
+        App.toast((isIn ? 'ติ๊กว่าเข้าแล้ว · ' : 'ติ๊กว่าจ่ายแล้ว · ') + it.paidOn);
+      });
+      body.querySelector('#un')?.addEventListener('click', () => {
+        apply();
+        it.paid = false; delete it.paidOn;
+        Store.commit(); Sheet.close(); App.render();
+      });
+      body.querySelector('#del').onclick = () => {
+        if (!confirm(`ลบ "${it.name}" ออกจากเดือนนี้?`)) return;
+        const i = list.indexOf(it);
+        if (i >= 0) list.splice(i, 1);
+        Store.commit(); Sheet.close(); App.render(); App.toast('ลบแล้ว');
       };
     });
   }
+
+  /** เรียกจากที่อื่นที่ยังใช้ชื่อเดิม */
+  const togglePaid = (it, monthId) => itemSheet(it, monthId, 'out', Store.month(monthId).expenses);
 
   function monthCalendar(host) {
     const D = Store.get();
@@ -666,6 +753,11 @@ const Screens = (() => {
               dueDay: backD, note: 'เงินที่ให้ยืมไว้ ถึงกำหนดคืน', paid: false });
           }
         }
+        // กางกลุ่มผันแปรของเดือนนั้นให้ด้วย ไม่งั้นของที่เพิ่งเพิ่มจะหายเข้าไปในกลุ่มที่พับอยู่
+        // แล้วผู้ใช้จะนึกว่ากดไม่ติด
+        App.state.expand ??= new Set();
+        App.state.expand.add(monthId);
+
         Store.commit(); Sheet.close(); App.render();
         App.toast(kind === 'lend' ? 'เพิ่มแล้ว — ตั้งวันรับคืนไว้ให้ด้วย' : 'เพิ่มลงปฏิทินแล้ว');
       };
