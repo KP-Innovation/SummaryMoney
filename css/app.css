@@ -66,6 +66,9 @@ body {
 .main {
   flex: 1; min-width: 0;
   overflow-y: auto; -webkit-overflow-scrolling: touch;
+  /* จองที่ให้แถบเลื่อนไว้ตลอด — ไม่งั้นความกว้างเปลี่ยนตอนแถบโผล่
+     แล้วเส้นเวลาที่คำนวณความกว้างไว้พอดีจอจะล้นออกไปนิดนึงทุกครั้ง */
+  scrollbar-gutter: stable;
   padding: calc(26px + var(--sat)) 26px calc(40px + env(safe-area-inset-bottom));
   scroll-behavior: smooth;
 }
@@ -102,6 +105,9 @@ body {
 .nav-item:hover { background: var(--surface); color: var(--text); }
 .nav-item.on { background: var(--surface-2); color: var(--text); }
 .nav-item.on i { color: var(--accent); opacity: 1; }
+
+/* ปุ่ม "เพิ่มเติม" มีไว้ให้แถบล่างบนมือถือเท่านั้น — แถบข้างเดสก์ท็อปโชว์ครบอยู่แล้ว */
+.nav-item.only-phone { display: none; }
 
 .nav-foot { margin-top: auto; padding-top: 12px; }
 .nav-mini {
@@ -390,6 +396,265 @@ body {
                              .yr-month { padding: 10px 9px 8px; border-radius: 12px; } }
 @media (max-width: 380px)  { .yr-grid { grid-template-columns: 1fr; } }
 
+/* ══════════════════════════════════════════════════════════════
+   ไทม์ไลน์ — หนึ่งเดือนหนึ่งเส้น ลูกศรชี้ออกจากเส้นตามวันที่
+   ────────────────────────────────────────────────────────────
+   ⚠️ ชื่อแถว (.tl-labels) ต้องเป็น sticky ที่อยู่ในสายไหลปกติของ flex
+   ห้ามเปลี่ยนเป็น absolute เด็ดขาด — sticky ใช้กับ absolute ไม่ได้
+   แล้วบนมือถือที่ต้องเลื่อนไปดูสิ้นเดือน ชื่อแถวจะหลุดออกนอกจอไปด้วย
+   จนไม่รู้ว่าลูกศรอันไหนคือค่าอะไร
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── คิวจ่าย: แดง = ต้องจ่ายก่อน แล้วไล่ ส้ม เหลือง ── */
+.q-row {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 8px; border-radius: var(--r-sm); cursor: pointer;
+  transition: background .14s;
+}
+.q-row:hover { background: var(--surface); }
+.q-dot {
+  width: 9px; height: 9px; border-radius: 99px; flex-shrink: 0;
+  background: var(--text-3); display: block;
+}
+.q-dot.over   { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.22); }
+.q-dot.red    { background: #f43f5e; box-shadow: 0 0 0 3px rgba(244,63,94,.2); }
+.q-dot.orange { background: #fb923c; box-shadow: 0 0 0 3px rgba(251,146,60,.18); }
+.q-dot.yellow { background: #facc15; box-shadow: 0 0 0 3px rgba(250,204,21,.16); }
+.q-when { font-size: 12px; font-weight: 800; width: 62px; flex-shrink: 0; }
+.q-name {
+  flex: 1; min-width: 0; font-size: 12.5px; color: var(--text-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.q-amt  { font-size: 14px; font-weight: 800; }
+.q-left { font-size: 11px; font-weight: 700; width: 74px; text-align: right; flex-shrink: 0; }
+.q-note {
+  margin-top: 6px; padding: 9px 11px; border-radius: 10px;
+  background: var(--neg-dim); font-size: 12.5px; font-weight: 700;
+}
+
+/* ── แถบเครื่องมือ ── */
+.tl-bar { padding: 12px 14px; }
+.tl-bar-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tl-bar-row + .tl-bar-row { margin-top: 10px; }
+.tl-span { font-size: 14px; font-weight: 800; letter-spacing: -.02em; }
+.tl-btn {
+  padding: 7px 11px; border: 1px solid var(--line); border-radius: 10px;
+  background: none; color: var(--text-2); cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 700; white-space: nowrap;
+}
+.tl-btn:hover { color: var(--text); border-color: var(--line-2); }
+.tl-btn.hi { background: var(--accent); color: #0b0d16; border-color: transparent; }
+.tl-btn.on { background: var(--warn-dim); color: var(--warn); border-color: transparent; }
+
+/* แถบเลือกช่วงวัน — ซูมเข้าไปดูครึ่งเดือนตอนลูกศรแน่นเกิน */
+.tl-rlab { font-size: 12px; color: var(--text-2); width: 82px; flex-shrink: 0; }
+.tl-range {
+  position: relative; flex: 1; min-width: 130px; height: 26px;
+  touch-action: none;
+}
+.tl-range::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 11px; height: 4px;
+  border-radius: 99px; background: rgba(255,255,255,.09);
+}
+.tl-range-fill {
+  position: absolute; top: 11px; height: 4px; border-radius: 99px;
+  background: var(--accent); opacity: .65;
+}
+.tl-range-h {
+  position: absolute; top: 4px; width: 18px; height: 18px; margin-left: -9px;
+  border: 2px solid var(--accent); border-radius: 99px;
+  background: #14161d; cursor: grab; padding: 0;
+}
+.tl-range-h:active { cursor: grabbing; transform: scale(1.15); }
+
+/* ── กระดาน ── */
+.tl-card { padding: 0; overflow: hidden; }
+.tl-scroll {
+  overflow-x: auto; overflow-y: hidden;
+  overscroll-behavior-x: contain;              /* กันปัดแนวนอนแล้วเบราว์เซอร์ย้อนหน้า */
+  -webkit-overflow-scrolling: touch;
+}
+.tl-inner { min-width: 100%; }
+
+.tl-month { border-bottom: 1px solid var(--line); padding: 11px 0 13px; }
+.tl-month:last-child { border-bottom: 0; }
+.tl-month.now { background: rgba(129,140,248,.045); }
+
+/* หัวเดือนเกาะขอบซ้าย เลื่อนไปสิ้นเดือนแล้วยังเห็นว่าเดือนอะไร เหลือเท่าไหร่ */
+.tl-mhead {
+  position: sticky; left: 0; width: max-content;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 14px 9px 12px;
+}
+.tl-mname { font-size: 13.5px; font-weight: 800; letter-spacing: -.02em; }
+.tl-sum {
+  display: flex; align-items: baseline; gap: 6px;
+  padding: 3px 9px; border: 1px solid var(--line); border-radius: 9px;
+  background: none; color: var(--text); cursor: pointer; font: inherit;
+}
+.tl-sum:hover { border-color: var(--line-2); background: var(--surface); }
+.tl-sum b { font-size: 13.5px; font-weight: 800; }
+.tl-sum span { font-size: 10.5px; font-weight: 700; }
+.tl-est { color: var(--text-3) !important; }
+.tl-add, .tl-nod {
+  border: 1px dashed var(--line-2); border-radius: 9px; padding: 4px 9px;
+  background: none; color: var(--text-3); cursor: pointer;
+  font: inherit; font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.tl-add:hover { color: var(--text); border-color: var(--accent); }
+.tl-nod { border-style: solid; border-color: rgba(251,191,36,.35); color: var(--warn); }
+
+.tl-row { display: flex; align-items: flex-start; }
+
+/* แกน Y */
+.tl-labels {
+  position: sticky; left: 0; z-index: 3; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  background: #0e1016;
+  box-shadow: 7px 0 12px -8px rgba(0,0,0,.85);
+}
+.tl-month.now .tl-labels { background: #131623; }
+.tl-lab {
+  display: flex; align-items: center; gap: 6px; padding-left: 12px;
+  font-size: 10.5px; color: var(--text-2); min-width: 0;
+}
+.tl-lab i { width: 6px; height: 6px; border-radius: 2px; background: var(--c); flex-shrink: 0; }
+.tl-lab span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-lab.axis { font-size: 9.5px; color: var(--text-3); letter-spacing: .06em; }
+
+.tl-plot { position: relative; flex-shrink: 0; }
+.tl-we { position: absolute; top: 0; bottom: 0; background: rgba(255,255,255,.018); }
+.tl-axis {
+  position: absolute; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--line-2), rgba(255,255,255,.06));
+}
+.tl-tick {
+  position: absolute; transform: translate(-50%, 5px);
+  font-size: 9px; color: var(--text-3); font-variant-numeric: tabular-nums;
+}
+.tl-today {
+  position: absolute; top: 0; bottom: 0; width: 0;
+  border-left: 1px dashed var(--accent); opacity: .6;
+}
+.tl-none {
+  position: absolute; left: 10px; font-size: 11px; color: var(--text-3);
+  white-space: nowrap;
+}
+
+/* ช่วงที่จ่ายได้โดยไม่เสียเครดิต */
+.tl-band { position: absolute; top: 0; bottom: 0; pointer-events: none; }
+.tl-band i {
+  position: absolute; inset: 0; border-radius: 5px;
+  background: var(--c); opacity: .12;
+  border-left: 1px solid var(--c); border-right: 1px solid var(--c);
+}
+.tl-band span {
+  position: absolute; top: 1px; left: 5px;
+  font-size: 8.5px; font-weight: 700; color: var(--c); white-space: nowrap;
+}
+
+/* ── ลูกศรของรายการ ── */
+.tl-mk { position: absolute; width: 2px; margin-left: -1px; cursor: pointer; }
+.tl-mk::after { content: ''; position: absolute; left: -10px; right: -10px; top: -5px; bottom: -5px; }
+.tl-stem { position: absolute; left: 0; width: 2px; background: var(--c); opacity: .45; border-radius: 1px; }
+.tl-mk.up   .tl-stem { top: 7px; bottom: 0; }
+.tl-mk.down .tl-stem { top: 0; bottom: 7px; }
+.tl-head {
+  position: absolute; left: -4px; width: 0; height: 0;
+  border-left: 5px solid transparent; border-right: 5px solid transparent;
+}
+.tl-mk.up   .tl-head { top: 0; border-bottom: 7px solid var(--c); }
+.tl-mk.down .tl-head { bottom: 0; border-top: 7px solid var(--c); }
+.tl-val {
+  position: absolute; left: 9px; font-size: 9.5px; font-weight: 800;
+  color: var(--c); white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.tl-mk.up   .tl-val { top: -2px; }
+.tl-mk.down .tl-val { bottom: -2px; }
+.tl-mk.done { opacity: .38; }
+.tl-mk.done .tl-val { text-decoration: line-through; }
+.tl-mk:hover { z-index: 4; }
+.tl-mk:hover .tl-stem { opacity: .9; }
+.tl-mk.drag { z-index: 6; }
+.tl-mk.drag .tl-head { transform: scale(1.35); }
+
+/* จุดสถานะที่ปลายลูกศร — ไล่ แดง ส้ม เหลือง ตามลำดับที่ต้องจ่าย */
+.tl-urg {
+  position: absolute; left: -3.5px; width: 7px; height: 7px; border-radius: 99px;
+  box-shadow: 0 0 0 2px #0d0f15;
+}
+.tl-mk.up   .tl-urg { top: -8px; }
+.tl-mk.down .tl-urg { bottom: -8px; }
+.tl-mk.over   .tl-urg { background: #ef4444; }
+.tl-mk.red    .tl-urg { background: #f43f5e; }
+.tl-mk.orange .tl-urg { background: #fb923c; }
+.tl-mk.yellow .tl-urg { background: #facc15; }
+
+.tl-endcap {
+  position: absolute; display: flex; flex-direction: column; gap: 1px;
+  padding: 5px 8px; border-radius: 9px;
+  background: rgba(255,255,255,.045); border: 1px solid var(--line);
+}
+.tl-endcap span { font-size: 8.5px; color: var(--text-3); font-weight: 700; }
+.tl-endcap b { font-size: 13px; font-weight: 800; }
+.tl-endcap span.num { font-size: 9.5px; font-weight: 700; }
+
+/* ── แถบเลือกวันแบบลากนิ้ว (ในแผงเพิ่ม/แก้รายการ) ── */
+.ds { padding: 2px 0; }
+.ds-out { padding: 10px 8px; border: 1px solid var(--line-2); border-radius: 11px; background: rgba(255,255,255,.04); }
+.ds-track { position: relative; height: 26px; touch-action: none; cursor: pointer; }
+.ds-track::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 12px; height: 3px;
+  border-radius: 99px; background: rgba(255,255,255,.12);
+}
+.ds-t { position: absolute; top: 8px; width: 1px; height: 5px; background: rgba(255,255,255,.2); }
+.ds-t.big { top: 5px; height: 11px; background: rgba(255,255,255,.34); }
+.ds-knob {
+  position: absolute; top: 3px; width: 20px; height: 20px; margin-left: -10px;
+  border-radius: 99px; background: var(--accent);
+  box-shadow: 0 2px 10px rgba(129,140,248,.55);
+}
+.ds-lab { margin-top: 7px; font-size: 13px; color: var(--text-2); }
+.ds-lab b { font-size: 17px; color: var(--text); }
+.ds-lab span { color: var(--text-3); }
+
+/* ── รายการแบบติ๊ก (แผงจำลอง / ช่วงจ่าย / แถว) ── */
+.tl-chk {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 4px; font-size: 13px; color: var(--text-2); cursor: pointer;
+}
+.tl-chk input { width: 18px; height: 18px; accent-color: var(--accent); flex-shrink: 0; }
+.tl-chk.pick { border-bottom: 1px solid var(--line); }
+.pk-n { flex: 1; min-width: 0; font-size: 13px; color: var(--text); }
+.pk-n em { display: block; font-style: normal; font-size: 11px; color: var(--text-3); margin-top: 1px; }
+.tl-picklist { max-height: 46vh; overflow-y: auto; }
+
+.tl-colors { display: flex; flex-wrap: wrap; gap: 8px; }
+.tl-colors button {
+  width: 30px; height: 30px; border-radius: 9px; border: 2px solid transparent;
+  cursor: pointer; padding: 0;
+}
+.tl-colors button.on { border-color: var(--text); transform: scale(1.1); }
+
+@media (max-width: 780px) {
+  /* กินเต็มความกว้างจอ — ทุกพิกเซลมีค่าเมื่อเส้นยาว 31 วัน */
+  .tl-card {
+    margin-left: calc(-15px - env(safe-area-inset-left, 0px));
+    margin-right: calc(-15px - env(safe-area-inset-right, 0px));
+    border-radius: 0; border-left: 0; border-right: 0;
+  }
+  /* บีบปุ่มให้ลงได้แถวเดียว — แถบเครื่องมือสูงเท่าไหร่ เส้นเวลาก็เห็นน้อยลงเท่านั้น */
+  .tl-bar { padding: 11px 12px; }
+  .tl-bar-row { gap: 6px; }
+  .tl-btn { padding: 6px 8px; font-size: 11.5px; border-radius: 9px; }
+  .tl-span { font-size: 13px; }
+  .tl-rlab { width: 74px; font-size: 11px; }
+  .tl-range { min-width: 90px; }
+  .q-when { width: 54px; font-size: 11.5px; }
+  .q-left { width: 62px; font-size: 10.5px; }
+  .q-name { font-size: 11.5px; }
+}
+
 /* ══ แผงลอย ══ */
 .scrim { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.62); backdrop-filter: blur(3px); }
 .sheet {
@@ -468,6 +733,9 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
     backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
   }
   .nav-brand, .nav-foot { display: none; }
+  .nav-item.more { display: none; }              /* ยุบไปอยู่ในปุ่ม "เพิ่มเติม" */
+  .nav-item.only-phone { display: flex; }
+  .nav-item.only-phone.on { color: var(--text-2); }
   .nav-item {
     flex: 1; flex-direction: column; gap: 3px; justify-content: center;
     padding: 8px 2px; border-radius: 0; background: none !important;

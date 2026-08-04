@@ -3,13 +3,15 @@
 // ══════════════════════════════════════════════════════════════
 
 const App = (() => {
-  const state = { screen: 'dashboard', month: null };
+  // เปิดแอปมาเจอเส้นเวลาก่อนเสมอ — คำถามแรกของทุกวันคือ "วันนี้ต้องจ่ายอะไร"
+  const state = { screen: 'timeline', month: null };
 
   function render() {
     const host = document.getElementById('main');
     const keepScroll = host.scrollTop;
+    TL.bust();                       // คิวจ่าย/สีสถานะ ต้องคิดใหม่ทุกครั้งที่วาด
     host.innerHTML = '';
-    (Screens[state.screen] || Screens.dashboard)(host);
+    (Screens[state.screen] || Screens.timeline)(host);
     // วาดใหม่ทั้งหน้าเพื่อความง่ายและถูกต้อง — คืนตำแหน่งเลื่อนให้ผู้ใช้ไม่รู้สึกสะดุด
     host.scrollTop = keepScroll;
 
@@ -38,6 +40,27 @@ const App = (() => {
     toast._t = setTimeout(() => { t.hidden = true; }, ms);
   }
 
+  // ── เมนู "เพิ่มเติม" บนมือถือ: หน้าที่ยุบออกจากแถบล่าง ──
+  function moreMenu() {
+    Sheet.open('เพิ่มเติม', body => {
+      for (const b of document.querySelectorAll('.nav-item.more')) {
+        const row = document.createElement('div');
+        row.className = 'row tap';
+        row.innerHTML = `<span class="row-name">${b.querySelector('span').textContent}</span>
+                         <span style="color:var(--text-3)">›</span>`;
+        row.style.cursor = 'pointer';
+        row.onclick = () => { Sheet.close(); go(b.dataset.screen); };
+        body.appendChild(row);
+      }
+      const d = document.createElement('button');
+      d.className = 'btn ghost wide';
+      d.style.marginTop = '12px';
+      d.textContent = 'ข้อมูลของฉัน — สำรอง / กู้คืน';
+      d.onclick = () => { Sheet.close(); dataMenu(); };
+      body.appendChild(d);
+    });
+  }
+
   // ── เมนูข้อมูล: สำรอง / กู้คืน / เริ่มใหม่ ──
   function dataMenu() {
     Sheet.open('ข้อมูลของฉัน', body => {
@@ -49,6 +72,8 @@ const App = (() => {
         </div>
         <label class="fld"><span>ยอดเงินตั้งต้น (ก่อนเดือนแรก)</span>
           <input type="text" id="sb" value="${D.startBalance}"></label>
+        <label class="fld"><span>เงินเก็บฉุกเฉินที่มีอยู่ก่อนเดือนแรก</span>
+          <input type="text" id="es" value="${D.emergencyStart || 0}"></label>
         <div class="btn-row">
           <button class="btn ghost" id="exp">⬇ สำรองไฟล์</button>
           <button class="btn ghost" id="imp">⬆ กู้คืน</button>
@@ -60,6 +85,10 @@ const App = (() => {
       body.querySelector('#sb').onchange = e => {
         const v = U.calc(e.target.value);
         if (v !== null) { D.startBalance = v; Store.commit(); render(); toast('อัปเดตยอดตั้งต้นแล้ว'); }
+      };
+      body.querySelector('#es').onchange = e => {
+        const v = U.calc(e.target.value);
+        if (v !== null) { D.emergencyStart = v; Store.commit(); render(); toast('อัปเดตเงินฉุกเฉินตั้งต้นแล้ว'); }
       };
       body.querySelector('#exp').onclick = () => {
         const blob = new Blob([Store.exportJSON()], { type: 'application/json' });
@@ -90,8 +119,9 @@ const App = (() => {
     state.month = D.months.some(m => m.id === now) ? now
                 : (D.months[D.months.length - 1]?.id || now);
 
-    for (const b of document.querySelectorAll('.nav-item'))
+    for (const b of document.querySelectorAll('.nav-item[data-screen]'))
       b.onclick = () => go(b.dataset.screen);
+    document.getElementById('nav-more').onclick = moreMenu;
     document.getElementById('btn-data').onclick = dataMenu;
     document.getElementById('scrim').onclick = Sheet.close;
     for (const b of document.querySelectorAll('[data-close]')) b.onclick = Sheet.close;

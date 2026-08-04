@@ -150,9 +150,15 @@ const Screens = (() => {
       }));
     }
 
+    // ตัวเลขสองชั้น: "ตามแผน" มาจากลูกโซ่รายรับ-รายจ่าย ส่วน "ยอดจริง" มาจากที่กรอกไว้ในเส้นเวลา
+    // ต้องแยกให้ชัด ไม่งั้นเห็นเลขไม่ตรงกันสองที่แล้วไม่รู้ว่าอันไหนเชื่อได้
+    const real = TL.chain().get(id);
     host.appendChild(card(`
-      <div class="kv" style="padding:2px 0"><span class="kv-k" style="font-size:15px">เหลือสุทธิ</span>
-      <span class="kv-v num ${netClass(r.closing)}" style="font-size:26px">${signed(r.closing)} ฿</span></div>`));
+      <div class="kv" style="padding:2px 0"><span class="kv-k" style="font-size:15px">เหลือสุทธิตามแผน</span>
+      <span class="kv-v num ${netClass(r.closing)}" style="font-size:26px">${signed(r.closing)} ฿</span></div>
+      ${real?.actual ? `<div class="kv" style="padding:2px 0;border-top:1px solid var(--line);margin-top:8px">
+        <span class="kv-k">ยอดจริงในบัญชี + เงินฉุกเฉิน (จากเส้นเวลา)</span>
+        <span class="kv-v num ${netClass(real.net)}">${signed(real.net)} ฿</span></div>` : ''}`));
   }
 
   /** กล่องหนึ่งหมวด — พับได้ แก้ทุกช่องได้ */
@@ -173,7 +179,10 @@ const Screens = (() => {
 
     const box = s.querySelector('.rows');
     for (const it of items) {
-      const row = el(`<div class="row${/^—/.test(it.name) ? ' row-child' : ''}">
+      // จุดสถานะเดียวกับเส้นเวลา — เห็นตั้งแต่หน้ารายการรวมว่าก้อนไหนต้องจ่ายก่อน
+      const lv = TL.urgencyOf(it.id);
+      const row = el(`<div class="row${/^—/.test(it.name) ? ' row-child' : ''}${it.paid ? ' paid' : ''}">
+        ${lv ? `<i class="q-dot ${lv}"></i>` : ''}
         <span class="row-name"></span><span class="row-amt num"></span></div>`);
       Edit.inline(row.querySelector('.row-name'), {
         get: () => it.name, set: v => { it.name = v; Store.commit(); },
@@ -1062,7 +1071,8 @@ const Screens = (() => {
     host.appendChild(clr);
   }
 
-  return { dashboard, calendar, month: monthScreen, cards, savings, forecast, split };
+  return { timeline: TL.screen, dashboard, calendar, month: monthScreen,
+           cards, savings, forecast, split };
 })();
 
 window.Screens = Screens;

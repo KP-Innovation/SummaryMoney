@@ -13,7 +13,45 @@ const Store = (() => {
 
   const emptyMonth = id => ({
     id, status: 'predicted', incomes: [], expenses: [], oneTimes: [], note: '',
+    balance: null,                    // ยอดเงินจริงในบัญชีสิ้นเดือน (ผู้ใช้กรอกเอง)
   });
+
+  // ══ แถวของไทม์ไลน์ (แกน Y) ══════════════════════════════════
+  //
+  //  side:'up'  = เงินที่ยัง "เป็นของเรา" อยู่ — รายรับ เงินออม เงินก้อนที่โปะหนี้เป็นทรัพย์สิน
+  //  side:'down'= เงินที่จ่ายแล้วหมดไป — ค่าน้ำค่าไฟค่ากิน
+  //  emergency:true คือแถวเงินเก็บฉุกเฉิน — แถวเดียวที่ถูกนับกลับเข้ามาเป็น "เงินสุทธิ"
+  //  ผู้ใช้เพิ่ม/ลบ/เปลี่ยนสี/สลับบน-ล่างได้เองทั้งหมด นี่แค่ชุดตั้งต้น
+  const DEFAULT_LANES = [
+    { id: 'salary',    name: 'เงินเดือน',        side: 'up',   color: '#34d399' },
+    { id: 'bonus',     name: 'เงินพิเศษ',        side: 'up',   color: '#22d3ee' },
+    { id: 'emergency', name: 'เงินเก็บฉุกเฉิน',  side: 'up',   color: '#818cf8', emergency: true },
+    { id: 'saving',    name: 'จ่ายออมเงิน',      side: 'up',   color: '#38bdf8' },
+    { id: 'install',   name: 'จ่ายค่าผ่อน',      side: 'up',   color: '#a78bfa' },
+    { id: 'home',      name: 'ค่าที่อยู่',        side: 'down', color: '#fb7185' },
+    { id: 'utility',   name: 'น้ำ-ไฟ-เน็ต',      side: 'down', color: '#fbbf24' },
+    { id: 'card',      name: 'บัตร / หนี้',      side: 'down', color: '#f472b6' },
+    { id: 'car',       name: 'ค่ารถ / เดินทาง',  side: 'down', color: '#fb923c' },
+    { id: 'health',    name: 'ค่ารักษาพยาบาล',   side: 'down', color: '#e879f9' },
+    { id: 'living',    name: 'ค่ากิน / ใช้จ่าย',  side: 'down', color: '#94a3b8' },
+  ];
+
+  /**
+   * เดาว่ารายการหนึ่งควรอยู่แถวไหน — ใช้ครั้งเดียวตอนย้ายข้อมูลเก่าเข้าไทม์ไลน์
+   * เดาผิดได้ ไม่เป็นไร เพราะเปิดแผงรายการแล้วเปลี่ยนแถวเองได้ทันที
+   */
+  function guessLane(it, kind) {
+    const n = String(it.name || '');
+    if (kind === 'in') return /พิเศษ|โบนัส|ก้อน|คืน|ขาย|ยืม/.test(n) ? 'bonus' : 'salary';
+    if (it.type === 'saving') return /ฉุกเฉิน|สำรอง|emergency/i.test(n) ? 'emergency' : 'saving';
+    if (/ผ่อน|กยศ|สินเชื่อ|Flash|โปะ/i.test(n))                        return 'install';
+    if (/หอ|ห้อง|บ้าน|เช่า|คอนโด|ส่วนกลาง/.test(n))                    return 'home';
+    if (/ไฟ|น้ำ(?!มัน)|เน็ต|3BB|internet|AIS|ทรู|โทรศัพท์|มือถือ/i.test(n)) return 'utility';
+    if (/รถ|น้ำมัน|ทางด่วน|จอด|วินฯ|BTS|MRT|แท็กซี่/i.test(n))          return 'car';
+    if (/หมอ|พยาบาล|ยา|คลินิก|ทันตกรรม|สุขภาพ|ประกันชีวิต/.test(n))      return 'health';
+    if (it.type === 'debt' || it.card)                                  return 'card';
+    return 'living';
+  }
 
   /** เติม id ให้ทุกรายการ — seed จาก Excel ไม่มี id มาให้ */
   function normalize(d) {
@@ -26,13 +64,26 @@ const Store = (() => {
     d.savingsGoal ??= 0;
     d.assumptions ??= { incomeAdj: 0, expenseAdj: 0, extraSaving: 0, closedCards: [] };
     d.recurring ??= [];
+    d.lanes ??= DEFAULT_LANES.map(x => ({ ...x }));
+    d.emergencyStart ??= 0;           // เงินเก็บฉุกเฉินที่มีอยู่ก่อนเดือนแรก
+    d.cashNow ??= null;               // เงินในบัญชี ณ วันนี้ (ใช้คิดคิวจ่าย)
     // เดือนที่ปักหมุดไว้ดูบนสุดของปฏิทินรายปี เก็บเป็นรหัสเดือน 'YYYY-MM'
     // กรองด้วย regex เพราะเวอร์ชันก่อนเคยเก็บเป็น "ชื่อภาระ" — ของเก่าต้องถูกทิ้ง
     d.pinned = (d.pinned || []).filter(x => /^\d{4}-\d{2}$/.test(x));
 
+    const laneIds = new Set(d.lanes.map(l => l.id));
+    /** แถวของรายการ — ถ้าแถวที่เดาได้ถูกลบไปแล้ว ต้องตกลงแถวแรกของฝั่งที่ถูกต้อง
+        ห้ามปล่อยให้ชี้ไปแถวที่ไม่มีอยู่ ไม่งั้นรายการจะหายจากไทม์ไลน์เงียบๆ */
+    const fitLane = (it, kind) => {
+      const g = guessLane(it, kind);
+      if (laneIds.has(g)) return g;
+      const side = kind === 'in' ? 'up' : 'down';
+      return (d.lanes.find(l => l.side === side) || d.lanes[0])?.id;
+    };
     for (const m of d.months) {
       m.status ??= 'predicted';
       m.note ??= '';
+      if (m.balance === undefined) m.balance = null;
       for (const k of ['incomes', 'expenses', 'oneTimes']) {
         m[k] ??= [];
         for (const it of m[k]) {
@@ -40,6 +91,11 @@ const Store = (() => {
           it.note ??= '';
           it.amount = Number(it.amount) || 0;
           it.paid ??= false;          // สถานะเช็กลิสต์: จ่ายแล้ว / ยังไม่จ่าย
+          it.grace ??= 0;             // จ่ายช้าได้อีกกี่วันโดยไม่เสียเครดิต
+          // แถวบนไทม์ไลน์ — เดาให้ครั้งแรก แล้วผู้ใช้แก้เองได้
+          // ถ้าแถวที่เคยผูกไว้ถูกลบทิ้ง ต้องเดาใหม่ ไม่งั้นรายการจะหายจากไทม์ไลน์
+          if (!it.lane || !laneIds.has(it.lane))
+            it.lane = fitLane(it, k === 'expenses' ? 'out' : 'in');
         }
       }
       for (const e of m.expenses) e.type ??= 'variable';
@@ -54,9 +110,16 @@ const Store = (() => {
       d.recurring = last.expenses
         .filter(e => ['fixed', 'debt', 'saving'].includes(e.type) && !/^—/.test(e.name))
         .map(e => ({ id: U.uid('r'), name: e.name, amount: e.amount, type: e.type,
-                     dueDay: e.dueDay, card: e.card, active: true }));
+                     dueDay: e.dueDay, card: e.card, lane: e.lane, grace: 0,
+                     kind: 'out', active: true }));
     }
-    for (const r of d.recurring) { r.id ??= U.uid('r'); r.active ??= true; }
+    for (const r of d.recurring) {
+      r.id ??= U.uid('r');
+      r.active ??= true;
+      r.kind ??= 'out';
+      r.grace ??= 0;
+      if (!r.lane || !laneIds.has(r.lane)) r.lane = fitLane(r, r.kind);
+    }
     for (const c of d.cards) { c.id ??= U.uid('c'); c.used = Number(c.used) || 0; }
     for (const b of d.buckets) { b.id ??= U.uid('b'); b.balance = Number(b.balance) || 0; }
     for (const s of d.splits) { s.id ??= U.uid('s'); s.total = Number(s.total) || 0; s.settled ??= false; }
@@ -103,9 +166,21 @@ const Store = (() => {
 
   /** สร้างรายการจากภาระประจำหนึ่งอัน (ยังไม่จ่าย เพราะเดือนใหม่ยังไม่ได้จ่าย) */
   const fromRecurring = r => ({
-    id: U.uid('e'), rid: r.id, name: r.name, amount: Number(r.amount) || 0,
-    type: r.type, dueDay: r.dueDay, card: r.card, note: '', paid: false,
+    id: U.uid(r.kind === 'in' ? 'i' : 'e'), rid: r.id, name: r.name,
+    amount: Number(r.amount) || 0, type: r.type, dueDay: r.dueDay, card: r.card,
+    lane: r.lane, grace: Number(r.grace) || 0, note: '', paid: false,
   });
+
+  // ── แถวไทม์ไลน์ ──
+  const lane = id => D.lanes.find(l => l.id === id);
+  /** แถวของรายการหนึ่ง — ถ้าแถวหายไปให้ตกไปแถวสุดท้ายฝั่งที่ถูกต้อง ไม่ใช่หายไปเฉยๆ */
+  function laneOf(it, kind) {
+    return lane(it.lane)
+        || lane(guessLane(it, kind))
+        || D.lanes.find(l => l.side === (kind === 'in' ? 'up' : 'down'))
+        || D.lanes[0];
+  }
+  const lanesBySide = side => D.lanes.filter(l => l.side === side);
 
   /**
    * เติมภาระประจำที่ยังไม่มีลงในเดือนที่ระบุ
@@ -148,7 +223,8 @@ const Store = (() => {
   function reset() { localStorage.removeItem(KEY); location.reload(); }
 
   return { load, get, month, card, ensureMonth, applyRecurring, commit, onChange, save,
-           exportJSON, importJSON, reset, thisMonth, emptyMonth };
+           exportJSON, importJSON, reset, thisMonth, emptyMonth,
+           lane, laneOf, lanesBySide, guessLane, fromRecurring, DEFAULT_LANES };
 })();
 
 window.Store = Store;
