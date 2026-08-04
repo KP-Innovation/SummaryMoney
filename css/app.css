@@ -396,6 +396,64 @@ body {
                              .yr-month { padding: 10px 9px 8px; border-radius: 12px; } }
 @media (max-width: 380px)  { .yr-grid { grid-template-columns: 1fr; } }
 
+/* ══ โน้ตด่วน — แถบจดอิสระบนสุดของทุกหน้า ══════════════════════
+   ใช้โทนอำพันแทนโทนอินดิโก้ของทั้งแอป เพื่อให้เห็นชัดว่านี่ไม่ใช่ตัวเลขการเงิน
+   แต่เป็นกระดาษโน้ตที่จดอะไรก็ได้ */
+
+.qn-bar {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  margin-bottom: 14px; padding: 9px 14px;
+  border: 1px solid rgba(251,191,36,.22); border-left: 3px solid rgba(251,191,36,.55);
+  border-radius: 12px; background: rgba(251,191,36,.045);
+  color: var(--text-2); cursor: pointer; font: inherit; font-size: 13px; text-align: left;
+  transition: background .16s var(--ease), border-color .16s var(--ease);
+}
+.qn-bar:hover { background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.4); }
+.qn-ico { font-size: 13px; flex-shrink: 0; }
+.qn-prev {
+  flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--text);
+}
+.qn-prev.ph { color: var(--text-3); }
+.qn-caret { color: var(--text-3); font-size: 11px; }
+
+.qn {
+  border-color: rgba(251,191,36,.26);
+  border-left: 3px solid rgba(251,191,36,.6);
+  background: rgba(251,191,36,.045);
+  padding: 14px 16px 12px;
+}
+.qn-head { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+.qn-title { font-size: 13px; font-weight: 800; letter-spacing: -.01em; }
+.qn-when { flex: 1; font-size: 11px; color: var(--text-3); }
+.qn-x { width: 30px; height: 30px; border-radius: 9px; font-size: 12px; }
+
+.qn-ta {
+  width: 100%; display: block; resize: none; overflow-y: auto;
+  min-height: 76px; padding: 11px 13px;
+  font: inherit; font-size: 14.5px; line-height: 1.65; color: var(--text);
+  background: rgba(0,0,0,.22); border: 1px solid rgba(251,191,36,.16);
+  border-radius: 11px; outline: none;
+}
+.qn-ta:focus { border-color: rgba(251,191,36,.5); }
+.qn-ta::placeholder { color: var(--text-3); }
+
+.qn-foot { display: flex; gap: 14px; margin-top: 8px; }
+.qn-mini {
+  border: 0; background: none; padding: 2px 0; cursor: pointer;
+  color: var(--text-3); font: inherit; font-size: 11.5px; font-weight: 600;
+}
+.qn-mini:hover { color: var(--warn); }
+
+@media (max-width: 780px) {
+  .qn { padding: 12px 13px 10px; }
+  .qn-bar { padding: 9px 12px; margin-bottom: 12px; font-size: 12.5px; }
+  /* ⚠️ ต้อง 16px เป๊ะ — iOS Safari ซูมจอเข้าเองทุกครั้งที่แตะช่องพิมพ์ที่ตัวอักษรเล็กกว่า 16px
+     แล้วผู้ใช้ต้องมานั่งซูมออกเอง ทั้งหน้าจะเพี้ยนหมด */
+  .qn-ta,
+  input[type=text], input[type=number], input[type=date], select, textarea { font-size: 16px; }
+}
+
 /* ══════════════════════════════════════════════════════════════
    ไทม์ไลน์ — หนึ่งเดือนหนึ่งเส้น ลูกศรชี้ออกจากเส้นตามวันที่
    ────────────────────────────────────────────────────────────

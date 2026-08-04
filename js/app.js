@@ -11,6 +11,8 @@ const App = (() => {
     const keepScroll = host.scrollTop;
     TL.bust();                       // คิวจ่าย/สีสถานะ ต้องคิดใหม่ทุกครั้งที่วาด
     host.innerHTML = '';
+    const nb = quickNote();
+    if (nb) host.appendChild(nb);    // โน้ตอยู่บนสุดของทุกหน้า
     (Screens[state.screen] || Screens.timeline)(host);
     // วาดใหม่ทั้งหน้าเพื่อความง่ายและถูกต้อง — คืนตำแหน่งเลื่อนให้ผู้ใช้ไม่รู้สึกสะดุด
     host.scrollTop = keepScroll;
@@ -38,6 +40,86 @@ const App = (() => {
     t.textContent = msg; t.hidden = false;
     clearTimeout(toast._t);
     toast._t = setTimeout(() => { t.hidden = true; }, ms);
+  }
+
+  // ══ โน้ตด่วน ══════════════════════════════════════════════
+  //
+  //  แถบจดอะไรก็ได้บนสุดของทุกหน้า — ไม่ผูกกับเดือนหรือรายการไหน
+  //  (ต่างจากปุ่ม ✎ ของแต่ละรายการ ซึ่งเป็นโน้ตของรายการนั้นโดยเฉพาะ)
+  //
+  //  สองสถานะ: ย่อเป็นแถบบางๆ โชว์บรรทัดแรก / กางเป็นช่องพิมพ์
+  //  ⚠️ ห้ามเรียก render() ตอนพิมพ์เด็ดขาด — DOM ถูกสร้างใหม่ทั้งหน้า
+  //     เคอร์เซอร์จะเด้งหลุดกลางประโยค จึงบันทึกลง localStorage อย่างเดียว
+  function quickNote() {
+    const D = Store.get();
+    const n = D.quickNote;
+    if (n.hidden) return null;
+
+    const first = (n.text || '').split('\n').find(s => s.trim()) || '';
+
+    if (!n.open) {
+      const bar = U.el(`<button class="qn-bar">
+        <span class="qn-ico">📝</span>
+        <span class="qn-prev ${first ? '' : 'ph'}">${U.esc(first || 'จดอะไรก็ได้ตรงนี้…')}</span>
+        <span class="qn-caret">▾</span></button>`);
+      bar.onclick = () => { n.open = true; Store.save(); render(); };
+      return bar;
+    }
+
+    const box = U.el(`<div class="card qn">
+      <div class="qn-head">
+        <span class="qn-ico">📝</span>
+        <span class="qn-title">โน้ตด่วน</span>
+        <span class="qn-when" id="st">${n.updated ? 'บันทึกล่าสุด ' + n.updated : ''}</span>
+        <button class="icon-btn qn-x" id="cl" title="ปิดโน้ต">✕</button>
+      </div>
+      <textarea class="qn-ta" id="ta" placeholder="จดอะไรก็ได้ตรงนี้ — รายการที่ต้องจ่ายก่อนหลัง เตือนตัวเอง อะไรก็ได้"></textarea>
+      <div class="qn-foot">
+        <button class="qn-mini" id="hide">ซ่อนแถบนี้</button>
+        <button class="qn-mini" id="clr">ล้างข้อความ</button>
+      </div></div>`);
+
+    const ta = box.querySelector('#ta');
+    const st = box.querySelector('#st');
+    ta.value = n.text || '';
+
+    // ยืดตามเนื้อหา แต่ไม่เกินครึ่งจอ ไม่งั้นโน้ตยาวๆ ดันเนื้อหาที่เหลือตกจอไปหมด
+    const fit = () => {
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight + 2, innerHeight * 0.45) + 'px';
+    };
+    fit();
+
+    let t;
+    ta.oninput = () => {
+      fit();
+      clearTimeout(t);
+      t = setTimeout(() => {
+        n.text = ta.value;
+        n.updated = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+        Store.save();
+        st.textContent = 'บันทึกแล้ว ' + n.updated;
+      }, 400);
+    };
+
+    /** ปิด/ซ่อน ต้องเก็บสิ่งที่เพิ่งพิมพ์ก่อนเสมอ ไม่งั้นตัวอักษรใน 400ms สุดท้ายหาย */
+    const flush = () => {
+      clearTimeout(t);
+      n.text = ta.value;
+      if (ta.value.trim()) n.updated = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    };
+    box.querySelector('#cl').onclick = () => { flush(); n.open = false; Store.commit(); render(); };
+    box.querySelector('#hide').onclick = () => {
+      flush(); n.open = false; n.hidden = true; Store.commit(); render();
+      toast('ซ่อนแล้ว — เปิดคืนได้ที่เมนู ⋯ ข้อมูลของฉัน', 4000);
+    };
+    box.querySelector('#clr').onclick = () => {
+      if (ta.value.trim() && !confirm('ล้างข้อความในโน้ตทั้งหมด?')) return;
+      clearTimeout(t);
+      n.text = ''; n.updated = '';
+      Store.commit(); render();
+    };
+    return box;
   }
 
   // ── เมนู "เพิ่มเติม" บนมือถือ: หน้าที่ยุบออกจากแถบล่าง ──
@@ -74,6 +156,7 @@ const App = (() => {
           <input type="text" id="sb" value="${D.startBalance}"></label>
         <label class="fld"><span>เงินเก็บฉุกเฉินที่มีอยู่ก่อนเดือนแรก</span>
           <input type="text" id="es" value="${D.emergencyStart || 0}"></label>
+        ${D.quickNote.hidden ? '<button class="btn ghost wide" id="qn" style="margin-bottom:12px">📝 แสดงแถบโน้ตด่วนอีกครั้ง</button>' : ''}
         <div class="btn-row">
           <button class="btn ghost" id="exp">⬇ สำรองไฟล์</button>
           <button class="btn ghost" id="imp">⬆ กู้คืน</button>
@@ -90,6 +173,11 @@ const App = (() => {
         const v = U.calc(e.target.value);
         if (v !== null) { D.emergencyStart = v; Store.commit(); render(); toast('อัปเดตเงินฉุกเฉินตั้งต้นแล้ว'); }
       };
+      body.querySelector('#qn')?.addEventListener('click', () => {
+        D.quickNote.hidden = false;
+        D.quickNote.open = true;
+        Store.commit(); Sheet.close(); render();
+      });
       body.querySelector('#exp').onclick = () => {
         const blob = new Blob([Store.exportJSON()], { type: 'application/json' });
         const a = document.createElement('a');
