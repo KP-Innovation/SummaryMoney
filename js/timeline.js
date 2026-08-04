@@ -219,27 +219,34 @@ const TL = (() => {
   function toolbar(mids) {
     const st = S();
     const [a, b] = st.tlRange;
+    const preset = (lo, hi, name) =>
+      `<button class="tl-chipbtn ${a === lo && b === hi ? 'on' : ''}" data-lo="${lo}" data-hi="${hi}">${name}</button>`;
+
     const c = el(`<div class="card tl-bar">
       <div class="tl-bar-row">
         <button class="icon-btn" id="pm" title="ถอยหนึ่งเดือน">‹</button>
-        <div class="tl-span">${monthShort(mids[0])} – ${monthShort(mids[mids.length - 1])}</div>
+        <div class="tl-span">${monthShort(mids[0])}<span class="btn-t"> – ${monthShort(mids[mids.length - 1])}</span></div>
         <button class="icon-btn" id="nm" title="ถัดไปหนึ่งเดือน">›</button>
         <button class="tl-btn" id="now">วันนี้</button>
         <span style="flex:1"></span>
-        <button class="tl-btn hi" id="gen">⚡ จำลอง</button>
-        <button class="tl-btn ${st.tlDense === 'compact' ? 'on' : ''}" id="dense">${st.tlDense === 'compact' ? '⇕ กระชับ' : '⇕ แยกแถว'}</button>
-        <button class="tl-btn" id="lanes">แถว</button>
-        <button class="tl-btn" id="bands">ช่วงจ่าย</button>
-        <button class="tl-btn ${st.tlEdit ? 'on' : ''}" id="lock">${st.tlEdit ? '🔓 แก้ไขอยู่' : '🔒 ล็อก'}</button>
+        <button class="tl-btn hi" id="gen" title="จำลองรายการซ้ำ">⚡<span class="btn-t"> จำลอง</span></button>
+        <button class="tl-btn ${st.tlEdit ? 'on' : ''}" id="lock" title="ล็อก / ปลดล็อกการแก้บนเส้น"
+          >${st.tlEdit ? '🔓' : '🔒'}<span class="btn-t"> ${st.tlEdit ? 'แก้อยู่' : 'ล็อก'}</span></button>
+        <button class="tl-btn wide-only ${st.tlDense === 'compact' ? 'on' : ''}" id="dense">${st.tlDense === 'compact' ? '⇕ กระชับ' : '⇕ แยกแถว'}</button>
+        <button class="tl-btn wide-only" id="lanes">แถว</button>
+        <button class="tl-btn wide-only" id="bands">ช่วงจ่าย</button>
+        <button class="tl-btn phone-only" id="view" title="มุมมอง">⚙<span class="btn-t"> มุมมอง</span></button>
       </div>
-      <div class="tl-bar-row">
+      <div class="tl-bar-row tl-days">
         <span class="tl-rlab" id="rlab">วันที่ ${a} – ${b}</span>
         <div class="tl-range" id="rg">
           <div class="tl-range-fill"></div>
           <button class="tl-range-h" data-h="0"></button>
           <button class="tl-range-h" data-h="1"></button>
         </div>
-        <button class="tl-btn" id="rall">ทั้งเดือน</button>
+        <div class="tl-presets">
+          ${preset(1, 31, 'ทั้งเดือน')}${preset(1, 15, 'ต้นเดือน')}${preset(16, 31, 'ปลายเดือน')}
+        </div>
       </div>
     </div>`);
 
@@ -254,10 +261,36 @@ const TL = (() => {
     c.querySelector('#lanes').onclick = laneSheet;
     c.querySelector('#bands').onclick = () => bandSheet(mids);
     c.querySelector('#lock').onclick  = () => { st.tlEdit = !st.tlEdit; App.render(); };
-    c.querySelector('#rall').onclick  = () => { st.tlRange = [1, 31]; App.render(); };
+    c.querySelector('#view').onclick  = () => viewSheet(mids);
+    for (const p of c.querySelectorAll('.tl-chipbtn'))
+      p.onclick = () => { st.tlRange = [+p.dataset.lo, +p.dataset.hi]; App.render(); };
 
     rangeBar(c.querySelector('#rg'), c.querySelector('#rlab'));
     return c;
+  }
+
+  /** ปุ่มมุมมองที่ยุบมาจากแถบเครื่องมือบนมือถือ — แถบเครื่องมือต้องสูงคงที่ ไม่ตัดบรรทัดเด้งไปมา */
+  function viewSheet(mids) {
+    const st = S();
+    Sheet.open('มุมมองเส้นเวลา', body => {
+      const dense = st.tlDense === 'compact';
+      body.innerHTML = `
+        <div class="row tap" id="d"><span class="row-name">ความหนาแน่นของแถว
+          <div class="row-sub">${dense ? 'กระชับ — ยุบเหลือบน 1 ล่าง 1 เห็นหลายเดือนพร้อมกัน'
+                                       : 'แยกแถว — แต่ละหมวดมีแถวของตัวเอง อ่านง่ายกว่า'}</div></span>
+          <span class="chip ${dense ? 'warn' : ''}">${dense ? 'กระชับ' : 'แยกแถว'}</span></div>
+        <div class="row tap" id="l"><span class="row-name">แถวบนแกน Y
+          <div class="row-sub">เพิ่ม / ซ่อน / เปลี่ยนสี เช่น เพิ่มค่าผ่อนรถ</div></span>
+          <span style="color:var(--text-3)">›</span></div>
+        <div class="row tap" id="b"><span class="row-name">ช่วงเวลาที่จ่ายได้
+          <div class="row-sub">ไฮไลต์คร่อมเส้นว่าจ่ายได้ถึงวันไหนไม่เสียเครดิต</div></span>
+          <span style="color:var(--text-3)">›</span></div>`;
+      body.querySelector('#d').onclick = () => {
+        st.tlDense = dense ? 'full' : 'compact'; Sheet.close(); App.render();
+      };
+      body.querySelector('#l').onclick = laneSheet;
+      body.querySelector('#b').onclick = () => bandSheet(mids);
+    });
   }
 
   /** แถบเลือกช่วงวัน — ลากสองหัวจับ ใช้ซูมเข้าไปดูครึ่งเดือนได้ */
@@ -309,11 +342,9 @@ const TL = (() => {
     // ⚠️ ต้องวางการ์ดลงหน้าก่อนแล้วค่อยวัดความกว้างจริง
     // เคยพลาดมาแล้วด้วยการใช้ host.clientWidth ซึ่ง "รวม padding ของ .main เข้ามาด้วย"
     // เลยคิดว่ามีที่มากกว่าจริง 52px แล้ววาดเส้นล้นจนต้องเลื่อนทั้งที่ควรพอดีจอ
-    const outer = el(`<div class="card tl-card"><div class="tl-scroll"><div class="tl-inner"></div></div></div>`);
+    const outer = el(`<div class="card tl-card"></div>`);
     host.appendChild(outer);
-    const scroll = outer.querySelector('.tl-scroll');
-    const inner = outer.querySelector('.tl-inner');
-    const wrap = scroll.clientWidth || document.documentElement.clientWidth;
+    const wrap = outer.clientWidth || document.documentElement.clientWidth;
     const phone = wrap < 700;
 
     const labelW = phone ? 86 : wrap < 960 ? 106 : 126;
@@ -331,19 +362,25 @@ const TL = (() => {
     const q = queue();
     const nid = nowId();
 
-    inner.style.width = (labelW + span * dayW + END) + 'px';
-
+    // แต่ละเดือนมีแถบเลื่อนแนวนอนของตัวเอง
+    // เคยทำเป็นแถบเดียวคุมทั้ง 12 เดือน (เพื่อให้วันที่ตรงกันทุกแถว) แต่ใช้จริงแล้วงง
+    // เลื่อนดูปลายเดือน ส.ค. ทีเดียว เดือนอื่นเลื่อนตามหมด ทั้งที่ไม่ได้ตั้งใจแตะมัน
+    if (typeof st.tlScrollX !== 'object' || !st.tlScrollX) st.tlScrollX = {};
     for (const mid of mids)
-      inner.appendChild(monthLine({ mid, labelW, dayW, d1, d2, LH, ch, q, nid, phone, END }));
+      outer.appendChild(monthLine({ mid, labelW, dayW, d1, d2, LH, ch, q, nid, phone, END }));
 
-    // คืนตำแหน่งเลื่อนแนวนอน — ไม่งั้นแก้รายการทีนึงเด้งกลับไปวันที่ 1 ทุกครั้ง
-    scroll.scrollLeft = st.tlScrollX || 0;
-    scroll.addEventListener('scroll', () => { st.tlScrollX = scroll.scrollLeft; }, { passive: true });
+    // วัดหลังทุกเดือนถูกวางลงหน้าแล้ว — ตอนอยู่ใน monthLine() ยังไม่ได้ต่อกับ DOM จึงวัดไม่ได้
+    for (const node of outer.querySelectorAll('.tl-month')) {
+      const sc = node.querySelector('.tl-mscroll');
+      sc.scrollLeft = st.tlScrollX[node.dataset.mid] || 0;   // คืนตำแหน่งเดิมหลังวาดใหม่
+      node.classList.toggle('can-scroll', sc.scrollWidth > sc.clientWidth + 2);
+      node.classList.toggle('at-end', sc.scrollLeft + sc.clientWidth >= sc.scrollWidth - 2);
+    }
   }
 
   /** หนึ่งเดือน = หนึ่งเส้น */
   function monthLine(g) {
-    const { mid, labelW, dayW, d1, d2, LH, ch, q, nid, END } = g;
+    const { mid, labelW, dayW, d1, d2, LH, ch, q, nid, END, phone } = g;
     const D = Store.get();
     const dim = dimOf(mid);
     const ents = entries(mid);
@@ -381,19 +418,22 @@ const TL = (() => {
 
     const node = el(`<div class="tl-month ${isNow ? 'now' : ''}">
       <div class="tl-mhead">
-        <span class="tl-mname">${monthFull(mid)}</span>
+        <span class="tl-mname">${phone ? monthShort(mid) : monthFull(mid)}</span>
         ${isNow ? '<span class="chip" style="padding:2px 7px">เดือนนี้</span>' : ''}
         <button class="tl-sum ${r.net < 0 ? 'neg' : 'pos'}" id="sum">
           <b class="num">${signed(r.net)}</b>
           <span class="num ${diff < 0 ? 'neg' : 'pos'}">${signed(diff)}</span>
           ${r.actual ? '' : '<span class="tl-est">คาด</span>'}
         </button>
-        ${noDay.length ? `<button class="tl-nod" id="nod">⚠ ยังไม่ระบุวัน ${noDay.length}</button>` : ''}
-        <button class="tl-add" id="add">+ เพิ่ม</button>
+        ${noDay.length ? `<button class="tl-nod" id="nod" title="ยังไม่ระบุวัน"
+          >⚠<span class="btn-t"> ยังไม่ระบุวัน</span> ${noDay.length}</button>` : ''}
+        <button class="tl-add" id="add">+<span class="btn-t"> เพิ่ม</span></button>
       </div>
-      <div class="tl-row">
-        <div class="tl-labels"></div>
-        <div class="tl-plot"></div>
+      <div class="tl-mscroll">
+        <div class="tl-row">
+          <div class="tl-labels"></div>
+          <div class="tl-plot"></div>
+        </div>
       </div>
     </div>`);
 
@@ -519,6 +559,15 @@ const TL = (() => {
       for (const [id, p] of Object.entries(laneY)) if (Math.abs(p.y - y) <= LH / 2) laneId = id;
       addSheet(mid, day, laneId);
     });
+
+    // ── แถบเลื่อนของเดือนนี้เอง (วัดขนาดจริงหลังถูกวางลงหน้าใน board()) ──
+    const sc = node.querySelector('.tl-mscroll');
+    sc.addEventListener('scroll', () => {
+      S().tlScrollX[mid] = sc.scrollLeft;
+      // เงาขอบขวาบอกว่ายังมีวันต่ออีก — เลื่อนสุดแล้วเงาหายไป จะได้รู้ว่าจบเดือนแล้วจริง
+      node.classList.toggle('at-end', sc.scrollLeft + sc.clientWidth >= sc.scrollWidth - 2);
+    }, { passive: true });
+    node.dataset.mid = mid;
 
     return node;
   }

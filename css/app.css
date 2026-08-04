@@ -445,6 +445,16 @@ body {
 .tl-btn:hover { color: var(--text); border-color: var(--line-2); }
 .tl-btn.hi { background: var(--accent); color: #0b0d16; border-color: transparent; }
 .tl-btn.on { background: var(--warn-dim); color: var(--warn); border-color: transparent; }
+.tl-btn.phone-only { display: none; }
+
+/* ปุ่มช่วงวันสำเร็จรูป — กดทีเดียวถึงที่ เร็วกว่าลากหัวจับทีละอันบนมือถือ */
+.tl-presets { display: flex; gap: 4px; flex-shrink: 0; }
+.tl-chipbtn {
+  padding: 5px 9px; border: 1px solid var(--line); border-radius: 8px;
+  background: none; color: var(--text-3); cursor: pointer;
+  font: inherit; font-size: 11.5px; font-weight: 700; white-space: nowrap;
+}
+.tl-chipbtn.on { background: var(--surface-2); color: var(--text); border-color: var(--line-2); }
 
 /* แถบเลือกช่วงวัน — ซูมเข้าไปดูครึ่งเดือนตอนลูกศรแน่นเกิน */
 .tl-rlab { font-size: 12px; color: var(--text-2); width: 82px; flex-shrink: 0; }
@@ -467,23 +477,34 @@ body {
 }
 .tl-range-h:active { cursor: grabbing; transform: scale(1.15); }
 
-/* ── กระดาน ── */
+/* ── กระดาน ──
+   แต่ละเดือนเลื่อนแนวนอนของตัวเอง ไม่ผูกกัน
+   เคยทำเป็นแถบเดียวคุมทั้ง 12 เดือน แล้วเลื่อนดูปลายเดือนหนึ่ง เดือนอื่นเลื่อนตามหมด — งงมาก */
 .tl-card { padding: 0; overflow: hidden; }
-.tl-scroll {
-  overflow-x: auto; overflow-y: hidden;
-  overscroll-behavior-x: contain;              /* กันปัดแนวนอนแล้วเบราว์เซอร์ย้อนหน้า */
-  -webkit-overflow-scrolling: touch;
-}
-.tl-inner { min-width: 100%; }
 
-.tl-month { border-bottom: 1px solid var(--line); padding: 11px 0 13px; }
+.tl-month { position: relative; border-bottom: 1px solid var(--line); padding: 11px 0 13px; }
 .tl-month:last-child { border-bottom: 0; }
 .tl-month.now { background: rgba(129,140,248,.045); }
 
-/* หัวเดือนเกาะขอบซ้าย เลื่อนไปสิ้นเดือนแล้วยังเห็นว่าเดือนอะไร เหลือเท่าไหร่ */
+.tl-mscroll {
+  overflow-x: auto; overflow-y: hidden;
+  overscroll-behavior-x: contain;              /* กันปัดแนวนอนแล้วเบราว์เซอร์ย้อนหน้า */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;                       /* แถบเลื่อนบางๆ 12 อันซ้อนกันดูรก */
+}
+.tl-mscroll::-webkit-scrollbar { height: 0; }
+
+/* เงาขอบขวา = ยังมีวันต่ออีก · เลื่อนสุดแล้วเงาหายไปเอง จะได้รู้ว่าจบเดือนแล้ว */
+.tl-month::after {
+  content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 26px;
+  background: linear-gradient(90deg, transparent, rgba(10,11,15,.92));
+  pointer-events: none; opacity: 0; transition: opacity .2s var(--ease);
+}
+.tl-month.can-scroll::after { opacity: 1; }
+.tl-month.at-end::after { opacity: 0; }
+
 .tl-mhead {
-  position: sticky; left: 0; width: max-content;
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   padding: 0 14px 9px 12px;
 }
 .tl-mname { font-size: 13.5px; font-weight: 800; letter-spacing: -.02em; }
@@ -504,7 +525,7 @@ body {
 .tl-add:hover { color: var(--text); border-color: var(--accent); }
 .tl-nod { border-style: solid; border-color: rgba(251,191,36,.35); color: var(--warn); }
 
-.tl-row { display: flex; align-items: flex-start; }
+.tl-row { display: flex; align-items: flex-start; width: max-content; }
 
 /* แกน Y */
 .tl-labels {
@@ -643,13 +664,27 @@ body {
     margin-right: calc(-15px - env(safe-area-inset-right, 0px));
     border-radius: 0; border-left: 0; border-right: 0;
   }
-  /* บีบปุ่มให้ลงได้แถวเดียว — แถบเครื่องมือสูงเท่าไหร่ เส้นเวลาก็เห็นน้อยลงเท่านั้น */
+  /* แถบเครื่องมือต้องสูงคงที่ 2 แถว ห้ามตัดบรรทัดเด้งไปมา
+     ปุ่มที่เกินยุบเข้าปุ่ม ⚙ มุมมอง ทั้งหมด */
   .tl-bar { padding: 11px 12px; }
-  .tl-bar-row { gap: 6px; }
-  .tl-btn { padding: 6px 8px; font-size: 11.5px; border-radius: 9px; }
-  .tl-span { font-size: 13px; }
-  .tl-rlab { width: 74px; font-size: 11px; }
-  .tl-range { min-width: 90px; }
+  .tl-bar-row { gap: 6px; flex-wrap: nowrap; }
+  .tl-btn { padding: 6px 9px; font-size: 12px; border-radius: 9px; }
+  .tl-btn.wide-only { display: none; }
+  .tl-btn.phone-only { display: block; }
+  .tl-span { font-size: 12.5px; white-space: nowrap; }
+  .icon-btn { width: 30px; height: 30px; border-radius: 9px; }
+  /* จอแคบเหลือแค่ไอคอน — ข้อความปุ่มกินที่จนแถวล้นออกนอกจอ */
+  .btn-t { display: none; }
+  /* หัวเดือนต้องอยู่บรรทัดเดียว — ตัดตัวเลขส่วนต่างออก เหลือยอดสุทธิกับป้าย "คาด" ที่จำเป็นจริง */
+  .tl-sum > span.num { display: none; }
+  .tl-mhead { gap: 6px; padding: 0 10px 8px; }
+
+  /* แถวช่วงวันบนมือถือ: ปุ่มสำเร็จรูปอยู่แถวล่างเต็มความกว้าง กดง่ายกว่าลากหัวจับ */
+  .tl-days { flex-wrap: wrap; }
+  .tl-rlab { width: 66px; font-size: 11px; }
+  .tl-range { min-width: 100px; }
+  .tl-presets { width: 100%; margin-top: 2px; }
+  .tl-presets .tl-chipbtn { flex: 1; padding: 7px 4px; }
   .q-when { width: 54px; font-size: 11.5px; }
   .q-left { width: 62px; font-size: 10.5px; }
   .q-name { font-size: 11.5px; }
