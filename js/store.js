@@ -10,6 +10,8 @@ const Store = (() => {
   const KEY = 'finflow.v1';
   let D = null;                       // ข้อมูลทั้งหมด
   const subs = [];                    // ผู้ฟังการเปลี่ยนแปลง
+  const saveSubs = [];                // ผู้ฟังการบันทึก (ตัวซิงก์ขึ้นคลาวด์)
+  let quiet = false;                  // true = บันทึกลงเครื่องเฉยๆ ไม่ต้องส่งขึ้นคลาวด์
 
   const emptyMonth = id => ({
     id, status: 'predicted', incomes: [], expenses: [], oneTimes: [], note: '',
@@ -152,6 +154,19 @@ const Store = (() => {
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(D)); }
     catch (e) { console.warn('บันทึกไม่สำเร็จ', e); }
+    if (!quiet) for (const f of saveSubs) f(D);
+  }
+  const onSave = f => saveSubs.push(f);
+
+  /**
+   * เอาข้อมูลจากคลาวด์มาทับของในเครื่อง
+   * ต้องปิดเสียง (quiet) ระหว่างบันทึก ไม่งั้นตัวซิงก์จะเห็นว่า "มีการแก้ไข"
+   * แล้วส่งของที่เพิ่งดึงลงมากลับขึ้นไปใหม่วนไม่จบ
+   */
+  function applyRemote(raw) {
+    D = normalize(raw);
+    quiet = true; save(); quiet = false;
+    subs.forEach(f => f(D));
   }
 
   /** แก้ข้อมูลแล้วแจ้งให้หน้าจอวาดใหม่ */
@@ -225,6 +240,7 @@ const Store = (() => {
   function reset() { localStorage.removeItem(KEY); location.reload(); }
 
   return { load, get, month, card, ensureMonth, applyRecurring, commit, onChange, save,
+           onSave, applyRemote,
            exportJSON, importJSON, reset, thisMonth, emptyMonth,
            lane, laneOf, lanesBySide, guessLane, fromRecurring, DEFAULT_LANES };
 })();

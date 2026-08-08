@@ -1,7 +1,8 @@
 # หน้า Timeline (เส้นเวลา) — บันทึกการพัฒนา
 
 > อัปเดตล่าสุด **4 ส.ค. 2569** · ขึ้นเว็บแล้วที่ https://kp-innovation.github.io/SummaryMoney/
-> service worker เวอร์ชัน `finflow-v9`
+> service worker เวอร์ชัน `finflow-v11`
+> ข้อมูลซิงก์ข้ามเครื่องผ่าน Cloudflare แล้ว — ดู [SYNC.md](SYNC.md)
 
 ## แก้หลังใช้จริงรอบแรก (สำคัญ — อย่าทำซ้ำ)
 

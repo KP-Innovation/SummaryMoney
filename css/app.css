@@ -841,3 +841,55 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 }
 @media (max-width: 400px) { .grid.g3 { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ══ ซิงก์ข้ามเครื่อง ══════════════════════════════════════════
+   กล่องตั้งค่าในเมนูข้อมูล + แถบเตือนตอนข้อมูลสองฝั่งชนกัน */
+.sync-box { margin-bottom: 16px; }
+.sy-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 13.5px; font-weight: 700; margin-bottom: 8px;
+}
+.sy-off { font-size: 11.5px; font-weight: 600; color: var(--text-3); }
+.sy-on  { font-size: 11.5px; font-weight: 600; color: var(--pos); }
+.sy-on.busy     { color: var(--accent-2); }
+.sy-on.error,
+.sy-on.conflict { color: var(--warn); }
+.sy-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px; letter-spacing: .5px; color: var(--text);
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--r-sm); padding: 10px 12px; margin: 10px 0;
+  word-break: break-all; user-select: all; -webkit-user-select: all;
+}
+
+/* จุดสถานะเล็กๆ มุมปุ่ม ⋯ (เดสก์ท็อป) — เห็นได้โดยไม่ต้องเปิดเมนู */
+.nav-mini { position: relative; }
+.sync-dot {
+  position: absolute; top: 3px; right: 3px;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--pos);
+}
+.sync-dot.busy     { background: var(--accent-2); animation: pulse 1.1s infinite; }
+.sync-dot.error,
+.sync-dot.conflict { background: var(--warn); }
+@keyframes pulse { 50% { opacity: .25; } }
+
+.sync-err { border-color: rgba(251,191,36,.4) !important; }
+.sync-clash {
+  margin-bottom: 14px;
+  border: 1px solid rgba(251,191,36,.45);
+  background: linear-gradient(180deg, rgba(251,191,36,.09), rgba(251,191,36,.03));
+}
+.sc-head { font-size: 13.5px; font-weight: 700; margin-bottom: 12px; }
+.sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.sc-side {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-sm); padding: 10px 12px;
+}
+.sc-t { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.sc-m { font-size: 11.5px; color: var(--text-2); line-height: 1.55; }
+.sc-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.sc-btns .btn { flex: 1 1 auto; }
+@media (max-width: 780px) {
+  .sc-grid  { grid-template-columns: 1fr; }
+  .sc-btns .btn { flex: 1 1 100%; }
+}

@@ -11,6 +11,8 @@ const App = (() => {
     const keepScroll = host.scrollTop;
     TL.bust();                       // คิวจ่าย/สีสถานะ ต้องคิดใหม่ทุกครั้งที่วาด
     host.innerHTML = '';
+    const sb = syncBanner();
+    if (sb) host.appendChild(sb);    // เรื่องข้อมูลชนกันต้องเห็นก่อนอย่างอื่น
     const nb = quickNote();
     if (nb) host.appendChild(nb);    // โน้ตอยู่บนสุดของทุกหน้า
     (Screens[state.screen] || Screens.timeline)(host);
@@ -122,6 +124,59 @@ const App = (() => {
     return box;
   }
 
+  // ══ แถบแจ้งเรื่องซิงก์ ════════════════════════════════════
+  //
+  //  โผล่เฉพาะตอนที่ "ต้องให้คนตัดสินใจ" เท่านั้น — ซิงก์ปกติต้องเงียบ
+  //  ตอนข้อมูลสองฝั่งชนกัน ห้ามเลือกให้เอง เพราะเลือกผิด = ตัวเลขการเงินหายจริง
+  function syncBanner() {
+    const s = Sync.info();
+
+    if (s.state === 'conflict' && s.clash) {
+      const R = s.clash, L = Store.get();
+      const first = s.clashFirst;
+      const bar = U.el(`<div class="card sync-clash">
+        <div class="sc-head">${first ? '☁️ รหัสนี้มีข้อมูลอยู่แล้ว — จะใช้ของฝั่งไหน'
+                                     : '⚠️ ข้อมูลสองฝั่งไม่ตรงกัน — เลือกว่าจะเก็บฝั่งไหน'}</div>
+        <div class="sc-grid">
+          <div class="sc-side">
+            <div class="sc-t">บนคลาวด์</div>
+            <div class="sc-m">${U.esc(Sync.when(R.updatedAt))}</div>
+            <div class="sc-m">จาก ${U.esc(R.device || 'ไม่ทราบเครื่อง')} · ${U.esc(Sync.sizeOf(R.data))}</div>
+          </div>
+          <div class="sc-side">
+            <div class="sc-t">ในเครื่องนี้</div>
+            <div class="sc-m">${U.esc(first ? 'ข้อมูลเดิมของเครื่องนี้ (ยังไม่เคยซิงก์)'
+                                            : s.dirty ? 'มีการแก้ที่ยังไม่ได้ส่งขึ้น' : 'ตรงกับที่เคยส่งไป')}</div>
+            <div class="sc-m">${U.esc(s.device)} · ${U.esc(Sync.sizeOf(L))}</div>
+          </div>
+        </div>
+        <div class="sc-btns">
+          <button class="btn" id="take">⬇ ใช้ของบนคลาวด์</button>
+          <button class="btn ghost" id="give">⬆ ส่งของเครื่องนี้ทับ</button>
+          <button class="btn ghost" id="bk">💾 สำรองทั้งสองฝั่งก่อน</button>
+        </div>
+        <div class="hint" style="margin-top:8px">เลือกแล้วอีกฝั่งจะถูกทับ — ไม่แน่ใจให้กดสำรองไฟล์ไว้ก่อน</div>
+      </div>`);
+      bar.querySelector('#take').onclick = () => Sync.resolve('remote');
+      bar.querySelector('#give').onclick = () => Sync.resolve('local');
+      bar.querySelector('#bk').onclick = () => {
+        Sync.backupFile(Store.get(), 'เครื่องนี้');
+        Sync.backupFile(R.data, 'คลาวด์');
+        toast('สำรองไว้ทั้งสองไฟล์แล้ว');
+      };
+      return bar;
+    }
+
+    if (s.state === 'error') {
+      const bar = U.el(`<button class="qn-bar sync-err">
+        <span class="qn-ico">☁️</span>
+        <span class="qn-prev">${U.esc(s.note)} — แตะเพื่อลองใหม่</span></button>`);
+      bar.onclick = () => (s.dirty ? Sync.push() : Sync.pull({ loud: true }));
+      return bar;
+    }
+    return null;
+  }
+
   // ── เมนู "เพิ่มเติม" บนมือถือ: หน้าที่ยุบออกจากแถบล่าง ──
   function moreMenu() {
     Sheet.open('เพิ่มเติม', body => {
@@ -137,9 +192,93 @@ const App = (() => {
       const d = document.createElement('button');
       d.className = 'btn ghost wide';
       d.style.marginTop = '12px';
-      d.textContent = 'ข้อมูลของฉัน — สำรอง / กู้คืน';
+      d.textContent = 'ข้อมูลของฉัน — ซิงก์ / สำรอง / กู้คืน';
       d.onclick = () => { Sheet.close(); dataMenu(); };
       body.appendChild(d);
+    });
+  }
+
+  // ══ กล่องตั้งค่าซิงก์ (อยู่ในเมนูข้อมูล) ══════════════════
+  const SYNC_STATE_TEXT = { idle: '✓ ตรงกันแล้ว', busy: '⟳ กำลังซิงก์…',
+                            error: '⚠ ต่อไม่ได้', conflict: '⚠ ข้อมูลชนกัน', off: '' };
+
+  function syncBoxHTML(s) {
+    if (!s.on) return `
+      <div class="card sync-box">
+        <div class="sy-head"><span>☁️ ซิงก์ข้ามเครื่อง</span><span class="sy-off">ปิดอยู่</span></div>
+        <div class="hint">ตอนนี้ข้อมูลอยู่ในเครื่องนี้เท่านั้น เปิดจากมือถือหรือคอมเครื่องอื่น
+          จะไม่เห็นสิ่งที่แก้ไว้ที่นี่<br>เปิดซิงก์แล้วทุกเครื่องที่ใส่รหัสเดียวกันจะใช้ข้อมูลก้อนเดียวกัน</div>
+        <div class="btn-row" style="margin-top:12px">
+          <button class="btn" id="sy-new">เปิดใช้ (สร้างรหัสใหม่)</button>
+          <button class="btn ghost" id="sy-join">ใส่รหัสที่มีอยู่</button>
+        </div>
+        <div id="sy-join-box" hidden style="margin-top:10px">
+          <label class="fld"><span>รหัสซิงก์จากเครื่องแรก</span>
+            <input type="text" id="sy-code" placeholder="เช่น abcde-fghij-klmno-pqrst" autocapitalize="off" spellcheck="false"></label>
+          <button class="btn wide" id="sy-go">เชื่อมต่อ</button>
+        </div>
+      </div>`;
+
+    return `
+      <div class="card sync-box">
+        <div class="sy-head"><span>☁️ ซิงก์ข้ามเครื่อง</span>
+          <span class="sy-on ${s.state}">${SYNC_STATE_TEXT[s.state] || ''}</span></div>
+        <div class="hint">${U.esc(s.note || 'ข้อมูลเก็บไว้ที่เดียว ทุกเครื่องที่ใส่รหัสนี้เห็นเหมือนกัน')}<br>
+          อัปเดตล่าสุด ${U.esc(Sync.when(s.at))}${s.rev ? ` · ฉบับที่ ${s.rev}` : ''}
+          ${s.dirty ? ' · <b style="color:var(--warn,#fbbf24)">ยังมีของค้างส่ง</b>' : ''}</div>
+        <div class="sy-code" id="sy-show">${U.esc(s.code)}</div>
+        <div class="btn-row">
+          <button class="btn ghost" id="sy-copy">📋 คัดลอกรหัส</button>
+          <button class="btn ghost" id="sy-link">🔗 คัดลอกลิงก์เปิดบนมือถือ</button>
+        </div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn ghost" id="sy-now">⟳ ซิงก์เดี๋ยวนี้</button>
+          <button class="btn ghost" id="sy-stop">หยุดซิงก์เครื่องนี้</button>
+        </div>
+        <div class="hint" style="margin-top:8px">ใครมีรหัสนี้เปิดดูข้อมูลได้ — ส่งให้เฉพาะเครื่องตัวเอง</div>
+      </div>`;
+  }
+
+  async function copyText(text, okMsg) {
+    try { await navigator.clipboard.writeText(text); toast(okMsg); }
+    catch {                                   // บางเบราว์เซอร์บนมือถือไม่ให้คัดลอกตรงๆ
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); toast(okMsg); } catch { toast('คัดลอกไม่ได้ — กดค้างที่รหัสเพื่อคัดลอกเอง'); }
+      ta.remove();
+    }
+  }
+
+  function wireSyncBox(body) {
+    const redraw = () => { Sheet.close(); dataMenu(); };
+
+    body.querySelector('#sy-new')?.addEventListener('click', async () => {
+      const code = Sync.newCode();
+      await Sync.connect(code);
+      redraw(); render();
+      toast('เปิดซิงก์แล้ว — เอารหัสนี้ไปใส่ในเครื่องอื่น', 4000);
+    });
+    body.querySelector('#sy-join')?.addEventListener('click', () => {
+      const box = body.querySelector('#sy-join-box');
+      box.hidden = false;
+      box.querySelector('#sy-code').focus();
+    });
+    body.querySelector('#sy-go')?.addEventListener('click', async () => {
+      const code = body.querySelector('#sy-code').value.trim();
+      if (code.replace(/-/g, '').length < 12) return toast('รหัสสั้นเกินไป');
+      await Sync.connect(code);
+      redraw(); render();
+    });
+    body.querySelector('#sy-copy')?.addEventListener('click', () => copyText(Sync.info().code, 'คัดลอกรหัสแล้ว'));
+    body.querySelector('#sy-link')?.addEventListener('click', () => copyText(Sync.info().link, 'คัดลอกลิงก์แล้ว — เปิดลิงก์นี้บนมือถือได้เลย'));
+    body.querySelector('#sy-now')?.addEventListener('click', async () => {
+      await (Sync.info().dirty ? Sync.push() : Sync.pull({ loud: true }));
+      redraw(); render();
+    });
+    body.querySelector('#sy-stop')?.addEventListener('click', () => {
+      if (!confirm('หยุดซิงก์เฉพาะเครื่องนี้?\nข้อมูลบนคลาวด์และเครื่องอื่นยังอยู่ครบ')) return;
+      Sync.disconnect(); redraw();
+      toast('หยุดซิงก์แล้ว — เครื่องนี้กลับไปเก็บข้อมูลของตัวเอง');
     });
   }
 
@@ -147,11 +286,12 @@ const App = (() => {
   function dataMenu() {
     Sheet.open('ข้อมูลของฉัน', body => {
       const D = Store.get();
+      const s = Sync.info();
       body.innerHTML = `
         <div class="hint" style="margin-bottom:14px">
-          ข้อมูลทั้งหมดเก็บอยู่ในเครื่องนี้เท่านั้น ไม่ได้ส่งไปไหน<br>
           ${D.months.length} เดือน · ${D.cards.length} บัตร · ${D.buckets.length} กระเป๋าเงินเก็บ
         </div>
+        ${syncBoxHTML(s)}
         <label class="fld"><span>ยอดเงินตั้งต้น (ก่อนเดือนแรก)</span>
           <input type="text" id="sb" value="${D.startBalance}"></label>
         <label class="fld"><span>เงินเก็บฉุกเฉินที่มีอยู่ก่อนเดือนแรก</span>
@@ -164,6 +304,8 @@ const App = (() => {
         <div style="height:10px"></div>
         <button class="btn danger wide" id="rst">ล้างข้อมูลแล้วเริ่มจาก Excel ใหม่</button>
         <input type="file" id="file" accept="application/json" hidden>`;
+
+      wireSyncBox(body);
 
       body.querySelector('#sb').onchange = e => {
         const v = U.calc(e.target.value);
@@ -193,7 +335,12 @@ const App = (() => {
         catch (e) { toast('ไฟล์ไม่ถูกต้อง'); }
       };
       body.querySelector('#rst').onclick = () => {
-        if (confirm('ล้างข้อมูลในเครื่องแล้วเริ่มจากข้อมูล Excel ใหม่?\nสิ่งที่แก้ไว้จะหายหมด')) Store.reset();
+        const on = Sync.info().on;
+        const warn = 'ล้างข้อมูลในเครื่องแล้วเริ่มจากข้อมูล Excel ใหม่?\nสิ่งที่แก้ไว้จะหายหมด'
+          + (on ? '\n\n⚠️ เปิดซิงก์อยู่ — ข้อมูลบนคลาวด์และเครื่องอื่นจะถูกล้างตามไปด้วย' : '');
+        if (!confirm(warn)) return;
+        if (on) Sync.markReset();     // ไม่งั้นรีโหลดเสร็จมันจะดึงของเก่าจากคลาวด์กลับมาทันที
+        Store.reset();
       };
     });
   }
@@ -216,6 +363,21 @@ const App = (() => {
     document.addEventListener('keydown', e => { if (e.key === 'Escape') Sheet.close(); });
 
     render();
+
+    // ซิงก์เริ่มหลังวาดหน้าจอเสร็จ และไม่ await — เน็ตช้าต้องไม่ทำให้เปิดแอปช้าตาม
+    Sync.onState(s => {
+      const dot = document.getElementById('sync-dot');
+      if (dot) { dot.className = 'sync-dot ' + s; dot.hidden = (s === 'off'); }
+
+      //  วาดใหม่เฉพาะตอน "แถบเตือนควรอยู่/ควรหาย แต่บนจอยังไม่ตรง" เท่านั้น
+      //  เทียบกับของจริงบนจอ ไม่ใช่เทียบสถานะก่อนหน้า — วาดเสร็จแล้วเงื่อนไขจะเป็นเท็จเอง
+      //  จึงวนซ้ำไม่ได้ (เคยพลาดจนวาดซ้อนกันเองไม่รู้จบ)
+      const want = (s === 'conflict' || s === 'error');
+      const has  = !!document.querySelector('.sync-clash, .sync-err');
+      const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName || '');
+      if (want !== has && !typing) setTimeout(render, 0);   // เลื่อนออกไป กันวาดซ้อนระหว่างที่ยังทำงานค้างอยู่
+    });
+    Sync.init();
 
     if ('serviceWorker' in navigator)
       addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

@@ -134,8 +134,12 @@ const TL = (() => {
     st.tlBands ??= [];
 
     const mids = Array.from({ length: MONTHS }, (_, i) => shiftMonth(st.tlStart, i));
-    mids.forEach(Store.ensureMonth);          // มีเดือนครบก่อนค่อยคำนวณลูกโซ่
-    Store.save();                             // เดือนที่เพิ่งสร้างต้องอยู่รอดข้ามการรีเฟรช
+    // มีเดือนครบก่อนค่อยคำนวณลูกโซ่ — บันทึกเฉพาะตอนที่สร้างเดือนใหม่จริงๆ
+    // (เดิมบันทึกทุกครั้งที่วาดหน้า ซึ่งพอมีการซิงก์แล้วกลายเป็น "แก้ไข" ปลอมๆ
+    //  ดึงข้อมูลลงมาแล้ววาดหน้า → นับเป็นการแก้ → ส่งกลับขึ้นไป วนไม่จบ)
+    const made = mids.some(id => !Store.month(id));
+    mids.forEach(Store.ensureMonth);
+    if (made) Store.save();                   // เดือนที่เพิ่งสร้างต้องอยู่รอดข้ามการรีเฟรช
 
     host.appendChild(queueCard());
     host.appendChild(toolbar(mids));

@@ -1,8 +1,8 @@
 // Service Worker — เอาของใหม่จากเน็ตก่อน แล้วถอยไปใช้แคชถ้าออฟไลน์
 // (บทเรียนจาก SoundText: แคชก่อนทำให้เครื่องที่ติดตั้งแอปไว้ค้างอยู่กับโค้ดเก่า)
-const VERSION = 'finflow-v10';
+const VERSION = 'finflow-v11';
 const SHELL = ['./','./index.html','./css/app.css','./data/seed.json',
-  './js/util.js','./js/store.js','./js/engine.js','./js/chart.js',
+  './js/util.js','./js/store.js','./js/sync.js','./js/engine.js','./js/chart.js',
   './js/edit.js','./js/timeline.js','./js/screens.js','./js/app.js','./manifest.webmanifest'];
 
 self.addEventListener('install', e => {

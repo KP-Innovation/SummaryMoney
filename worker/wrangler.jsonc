@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "finflow-sync",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-01",
+
+  // ห้องเก็บข้อมูลหนึ่งห้องต่อหนึ่งรหัสซิงก์
+  // ใช้ Durable Object ไม่ใช่ KV เพราะ KV อ่านค่าที่เพิ่งเขียนอาจได้ของเก่า (นานถึง 60 วิ)
+  // ซึ่งจะทำให้ "แก้บนมือถือ แล้วเปิดคอมทันที" เห็นข้อมูลเก่า — DO อ่านตรงจากตัวเดียว ชัวร์เสมอ
+  "durable_objects": {
+    "bindings": [{ "name": "ROOM", "class_name": "Room" }]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Room"] }
+  ],
+
+  "observability": { "enabled": true }
+}
